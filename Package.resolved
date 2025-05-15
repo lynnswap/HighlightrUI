@@ -1,0 +1,15 @@
+{
+  "originHash" : "03dcdf02ab094c8eb075fe8fbe045b1aecffe9148b7681626996f25aab2a5a2c",
+  "pins" : [
+    {
+      "identity" : "highlightr",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/raspu/Highlightr",
+      "state" : {
+        "revision" : "bcf2d0590f32ac2528feb72d7e34f5b463801a47",
+        "version" : "2.2.1"
+      }
+    }
+  ],
+  "version" : 3
+}

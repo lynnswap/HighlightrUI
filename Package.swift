@@ -5,17 +5,23 @@ import PackageDescription
 
 let package = Package(
     name: "HighlightrUI",
+    platforms: [
+        .iOS(.v17),.macOS(.v14)
+    ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "HighlightrUI",
-            targets: ["HighlightrUI"]),
+            targets: ["HighlightrUI"])
+    ],
+    dependencies: [
+        .package(url: "https://github.com/raspu/Highlightr", from: "2.2.1")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "HighlightrUI"),
-
+            name: "HighlightrUI",
+            dependencies: [
+                .product(name: "Highlightr", package: "Highlightr")
+            ],
+            path: "Sources/HighlightrUI")
     ]
 )
