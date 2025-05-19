@@ -35,3 +35,7 @@ struct ContentView: View {
 ## License
 
 This project is released under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Changelog
+
+Current release: **1.0.0**. See [CHANGELOG](CHANGELOG.md) for details.
