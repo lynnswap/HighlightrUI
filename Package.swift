@@ -14,7 +14,7 @@ let package = Package(
             targets: ["HighlightrUI"])
     ],
     dependencies: [
-        .package(url: "https://github.com/raspu/Highlightr", from: "2.2.1")
+        .package(url: "https://github.com/raspu/Highlightr", from: "2.3.0")
     ],
     targets: [
         .target(
