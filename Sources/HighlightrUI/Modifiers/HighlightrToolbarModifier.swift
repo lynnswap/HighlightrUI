@@ -7,7 +7,6 @@
 import SwiftUI
 struct HighlightrToolbarModifier: ViewModifier {
     var model:HighlightrTextViewModel
-    @Binding var text:String
     
     @State private var store = HighlightrStore.shared
     @Environment(\.colorScheme) private var colorScheme
@@ -41,18 +40,11 @@ struct HighlightrToolbarModifier: ViewModifier {
                     model.setTheme(theme)
                 }
             }
-            .task(id: text) { syncFromBinding(model) }
-            .onChange(of: model.text) { if model.text != text { text = model.text } }
             .onChange(of:colorScheme){
                 if theme == "default"{
                     model.setTheme(defaultTheme)
                 }
             }
-    }
-    private func syncFromBinding(_ model:HighlightrTextViewModel) {
-        if model.text != text {
-            model.setText(text, initial: true)
-        }
     }
     private var defaultTheme:String{
         colorScheme == .dark ? "paraiso-dark" : "paraiso-light"
@@ -60,13 +52,11 @@ struct HighlightrToolbarModifier: ViewModifier {
 }
 extension View {
     func highlightrToolbar(
-        _ model: HighlightrTextViewModel,
-        text:Binding<String>
+        _ model: HighlightrTextViewModel
     ) -> some View {
         modifier(
             HighlightrToolbarModifier(
-                model:model,
-                text:text
+                model:model
             )
         )
     }

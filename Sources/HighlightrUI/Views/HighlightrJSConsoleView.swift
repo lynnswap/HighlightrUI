@@ -39,7 +39,8 @@ public struct HighlightrJSConsoleView:View{
                     frame.size.height = min(textView.contentSize.height,maxHeight)
                     textView.frame = frame
                 }
-            .highlightrToolbar(model, text: $text)
+            .highlightrToolbar(model)
+            .highlightrTextSync(model, text: $text)
         }else{
             Color.clear
                 .task{

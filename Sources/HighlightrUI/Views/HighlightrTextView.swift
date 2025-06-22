@@ -21,7 +21,8 @@ public struct HighlightrTextView: View{
         if let model {
             HighlightrTextViewRepresentable(model:model)
                 .padding(.leading,4)
-                .highlightrToolbar(model, text: $text)
+                .highlightrToolbar(model)
+                .highlightrTextSync(model, text: $text)
         }else{
             Color.clear
                 .task{
