@@ -13,7 +13,7 @@ This package targets **iOS 17** and **macOS 14** and offers:
 Add the following dependency to your `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/lynnswap/HighlightrUI.git", from: "1.2.0")
+.package(url: "https://github.com/lynnswap/HighlightrUI.git", from: "1.2.1")
 ```
 
 and then import `HighlightrUI` where needed.
