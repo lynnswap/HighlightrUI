@@ -23,6 +23,9 @@ public struct HighlightrTextView: View{
                 .padding(.leading,4)
                 .highlightrToolbar(model)
                 .highlightrTextSync(model, text: $text)
+#if canImport(UIKit)
+                .navigationBarTitleDisplayMode(.inline)
+#endif
         }else{
             Color.clear
                 .task{
