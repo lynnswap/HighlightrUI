@@ -8,34 +8,29 @@
 #if canImport(UIKit)
 import SwiftUI
 
-class AccessoryInputView<AccessoryContent: View>: UIInputView {
+class AccessoryInputView<AccessoryContent: View>: UIToolbar {
     private let controller: UIHostingController<AccessoryContent>
 
     init(_ accessoryViewBuilder: () -> AccessoryContent ) {
         controller = UIHostingController<AccessoryContent>(rootView: accessoryViewBuilder())
-        super.init(frame: CGRect(x: 0, y: 0, width: 0, height: NAVBAR_SIZE), inputViewStyle: .default)
-
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
-        controller.view.backgroundColor = UIColor.clear
-        addSubview(controller.view)
+        super.init(frame: .zero)
+        isTranslucent = true
+        
+        controller.view.backgroundColor = .clear
+        
+        let customButton = UIBarButtonItem(customView:controller.view )
+#if swift(>=6.2)
+        if #available(iOS 26.0, *) {
+            customButton.hidesSharedBackground = false
+            customButton.sharesBackground = true
+        }
+#endif
+        setItems([customButton], animated: false)
+        sizeToFit()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override var safeAreaInsets: UIEdgeInsets {
-        .zero
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        NSLayoutConstraint.activate([
-            widthAnchor.constraint(equalTo: controller.view.widthAnchor),
-            heightAnchor.constraint(equalTo: controller.view.heightAnchor),
-            centerXAnchor.constraint(equalTo: controller.view.centerXAnchor),
-            centerYAnchor.constraint(equalTo: controller.view.centerYAnchor)
-        ])
     }
 }
 #endif
