@@ -38,8 +38,6 @@ public struct HighlightrJSConsoleView:View{
 #if canImport(UIKit)
             let accessory = _accessoryBuilder?(model) ?? _inputAccessoryView
             HighlightrConsoleViewRepresentable(model:model, maxHeight:maxHeight, text:$text, inputAccessoryView: accessory)
-                .padding(.top,4)
-                .padding(.leading,16)
                 .onChange(of:text){
                     let textView = model.textView
                     var frame = textView.frame
@@ -50,8 +48,6 @@ public struct HighlightrJSConsoleView:View{
                 .highlightrTextSync(model, text: $text)
 #else
             HighlightrConsoleViewRepresentable(model:model, maxHeight:maxHeight, text:$text)
-                .padding(.top,4)
-                .padding(.leading,16)
                 .onChange(of:text){
                     let textView = model.textView
                     var frame = textView.frame
@@ -142,6 +138,10 @@ struct HighlightrConsoleViewRepresentable: PAM_ViewRepresentable {
     @Previewable @State var text :String = "aaaa\naaaaa\n\niii"
     VStack(spacing:0){
         Rectangle()
+            .fill(.indigo.gradient)
+            .ignoresSafeArea()
         HighlightrJSConsoleView(text:$text,maxHeight: 300)
+            .padding(.top,4)
+            .padding(.leading,16)
     }
 }
