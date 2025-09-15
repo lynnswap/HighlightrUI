@@ -34,32 +34,40 @@ struct ContentView: View {
 
 ## iOS Input Accessory
 
-Attach a keyboard accessory to `HighlightrTextView` on iOS.
+Available on both `HighlightrTextView` and `HighlightrJSConsoleView` on iOS.
 
 - `inputAccessoryView(_ view: UIView?)`: Attach any UIKit view as the accessory.
 - `inputAccessoryView(_ builder: (HighlightrTextViewModel) -> UIView?)`: Build a UIKit view with access to the editor model.
 - `inputAccessory(_ content: (HighlightrTextViewModel) -> some View)`: Provide a SwiftUI accessory; it is wrapped under the hood.
 
-SwiftUI example:
+SwiftUI examples:
 
 ```swift
 HighlightrTextView(text: $text, language: "javascript")
     .inputAccessory { model in
         HStack {
             Spacer()
-            Button {
-                model.dismissKeyboard()
-            } label: {
+            Button { model.dismissKeyboard() } label: {
+                Image(systemName: "chevron.down")
+            }
+        }
+    }
+
+HighlightrJSConsoleView(text: $text, maxHeight: 300)
+    .inputAccessory { model in
+        HStack {
+            Spacer()
+            Button { model.dismissKeyboard() } label: {
                 Image(systemName: "chevron.down")
             }
         }
     }
 ```
 
-UIKit builder example:
+UIKit builder example (works with both views):
 
 ```swift
-HighlightrTextView(text: $text, language: "javascript")
+HighlightrJSConsoleView(text: $text, maxHeight: 300)
     .inputAccessoryView { model in
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "chevron.down"), for: .normal)
