@@ -10,7 +10,10 @@ struct HighlightrToolbarModifier: ViewModifier {
     
     @State private var store = HighlightrStore.shared
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage("PDHighlightr_theme") var theme :String = "default"
+    @Environment(\.highlightrTheme) private var envTheme
+    @State private var localTheme: String = "default"
+    
+    private var theme: Binding<String> { envTheme ?? $localTheme }
     
     func body(content: Content) -> some View {
         content
@@ -21,7 +24,7 @@ struct HighlightrToolbarModifier: ViewModifier {
                 let placement = ToolbarItemPlacement.secondaryAction
 #endif
                 ToolbarItem(placement: placement){
-                    Picker(String(localized:"theme"),selection: $theme) {
+                    Picker(String(localized:"theme"), selection: theme) {
                         Section{
                             Text(String(localized:"default")).tag("default")
                         }
@@ -33,15 +36,15 @@ struct HighlightrToolbarModifier: ViewModifier {
                     }
                 }
             }
-            .task(id: theme){
-                if theme == "default"{
+            .task(id: theme.wrappedValue){
+                if theme.wrappedValue == "default"{
                     model.setTheme(defaultTheme)
                 }else{
-                    model.setTheme(theme)
+                    model.setTheme(theme.wrappedValue)
                 }
             }
             .onChange(of:colorScheme){
-                if theme == "default"{
+                if theme.wrappedValue == "default"{
                     model.setTheme(defaultTheme)
                 }
             }
