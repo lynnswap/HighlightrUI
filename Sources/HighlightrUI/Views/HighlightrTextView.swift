@@ -30,13 +30,11 @@ public struct HighlightrTextView: View{
 #if canImport(UIKit)
             let accessory = _accessoryBuilder?(model) ?? _inputAccessoryView
             HighlightrTextViewRepresentable(model:model, inputAccessoryView: accessory)
-                .padding(.leading,4)
                 .highlightrToolbar(model)
                 .highlightrTextSync(model, text: $text)
                 .navigationBarTitleDisplayMode(.inline)
 #else
             HighlightrTextViewRepresentable(model:model)
-                .padding(.leading,4)
                 .highlightrToolbar(model)
                 .highlightrTextSync(model, text: $text)
 #endif
@@ -101,6 +99,7 @@ struct HighlightrTextViewWrapper:View{
                 }
 #endif
                 .theme($theme)
+                .padding(.leading,4)
             
         }
     }
