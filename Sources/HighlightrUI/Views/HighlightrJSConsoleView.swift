@@ -23,6 +23,11 @@ public struct HighlightrJSConsoleView:View{
     
     @State var model:HighlightrTextViewModel?
     
+#if canImport(UIKit)
+    var _inputAccessoryView: UIView?
+    var _accessoryBuilder: ((HighlightrTextViewModel) -> UIView?)?
+#endif
+    
     public init(text: Binding<String>, maxHeight: CGFloat) {
         self._text    = text
         self.maxHeight = maxHeight
@@ -30,7 +35,9 @@ public struct HighlightrJSConsoleView:View{
     
     public var body:some View{
         if let model {
-            HighlightrConsoleViewRepresentable(model:model, maxHeight:maxHeight,text:$text)
+#if canImport(UIKit)
+            let accessory = _accessoryBuilder?(model) ?? _inputAccessoryView
+            HighlightrConsoleViewRepresentable(model:model, maxHeight:maxHeight, text:$text, inputAccessoryView: accessory)
                 .padding(.top,4)
                 .padding(.leading,16)
                 .onChange(of:text){
@@ -39,8 +46,21 @@ public struct HighlightrJSConsoleView:View{
                     frame.size.height = min(textView.contentSize.height,maxHeight)
                     textView.frame = frame
                 }
-            .highlightrToolbar(model)
-            .highlightrTextSync(model, text: $text)
+                .highlightrToolbar(model)
+                .highlightrTextSync(model, text: $text)
+#else
+            HighlightrConsoleViewRepresentable(model:model, maxHeight:maxHeight, text:$text)
+                .padding(.top,4)
+                .padding(.leading,16)
+                .onChange(of:text){
+                    let textView = model.textView
+                    var frame = textView.frame
+                    frame.size.height = min(textView.contentSize.height,maxHeight)
+                    textView.frame = frame
+                }
+                .highlightrToolbar(model)
+                .highlightrTextSync(model, text: $text)
+#endif
         }else{
             Color.clear
                 .task{
@@ -56,8 +76,14 @@ struct HighlightrConsoleViewRepresentable: PAM_ViewRepresentable {
     @Binding var text:String
     
 #if canImport(UIKit)
+    var inputAccessoryView: UIView?
+#endif
+    
+#if canImport(UIKit)
     func makeUIView(context: Context) -> PAM_HighlightrTextView {
-        return model.textView
+        let tv = model.textView
+        tv.inputAccessoryView = inputAccessoryView
+        return tv
     }
     
     func updateUIView(_ textView: PAM_HighlightrTextView, context: Context) {

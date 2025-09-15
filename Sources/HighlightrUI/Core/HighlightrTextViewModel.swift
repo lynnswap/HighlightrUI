@@ -133,7 +133,7 @@ public typealias PAM_TextView = NSTextView
 }
 #if canImport(AppKit)
 extension HighlightrTextViewModel:NSTextViewDelegate{
-    func textDidChange(_ notification: Notification) {
+    public func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else { return }
 
         self.text = textView.string
