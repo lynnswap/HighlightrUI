@@ -4,138 +4,21 @@
 //
 //  Created by lynnswap on 2025/05/13.
 //
-import SwiftUI
-let NAVBAR_SIZE :CGFloat = 44
+
 #if canImport(UIKit)
-let ICON_WEIGHT :Font.Weight = .bold
-
-
-struct HighlightrTextToolbarView: View {
-    var model:HighlightrTextViewModel
-    var body:some View{
-        toolbarView
-            .padding(.horizontal,16)
-            .frame(height:NAVBAR_SIZE)
-            .background(.ultraThinMaterial)
-        
-    }
-    let iconSize :CGFloat = 32
-    let iconSize2 :CGFloat = 36
-    private var toolbarView: some View{
-        HStack(spacing:4){
-            Button {
-                model.undo()
-            } label: {
-                Image(systemName:"arrow.uturn.left")
-                    .fontWeight(ICON_WEIGHT)
-                    .imageScale(.medium)
-                    .contentShape(Rectangle())
-            }
-            .frame(width:iconSize)
-            
-            Button {
-                model.insertIndent()
-            } label: {
-                Text(String("→"))
-                    .fontWeight(ICON_WEIGHT)
-                    .imageScale(.medium)
-                    .contentShape(Rectangle())
-            }
-            .frame(width:iconSize)
-            
-            Button {
-                model.insertParentheses(type:.kakko)
-            } label: {
-                Text(String("( )"))
-                    .fontWeight(ICON_WEIGHT)
-                    .imageScale(.medium)
-                    .contentShape(Rectangle())
-            }
-            .frame(width:iconSize)
-            
-            Button {
-                model.insertCurlyBraces()
-            } label: {
-                Text(String("{ }"))
-                    .fontWeight(ICON_WEIGHT)
-                    .imageScale(.medium)
-                    .contentShape(Rectangle())
-            }
-            .frame(width:iconSize)
-            
-           
-            doubleQuoteButton()
-            singleQuoteButton()
-            
-            Spacer()
-            
-            Button {
-                model.deleteCurrentLine()
-            } label: {
-                Text(String("←"))
-                    .fontWeight(ICON_WEIGHT)
-                    .imageScale(.medium)
-                    .contentShape(Rectangle())
-            }
-            .frame(width:iconSize2)
-            
-            Button {
-                model.clearText()
-            } label: {
-                Image(systemName: "eraser")
-                    .fontWeight(ICON_WEIGHT)
-                    .imageScale(.medium)
-                    .contentShape(Rectangle())
-            }
-            .frame(width:iconSize2)
-            
-            Button {
-                model.dismissKeyboard()
-            } label: {
-                Image(systemName: "chevron.down")
-                    .fontWeight(ICON_WEIGHT)
-                    .imageScale(.medium)
-                    .contentShape(Rectangle())
-            }
-            .frame(width:iconSize2)
-        }
-    }
-    
-    private func doubleQuoteButton() -> some View {
-        Button {
-            model.insertParentheses(type:.doubleQuotaion)
-        } label: {
-            Text(String("\" \""))
-                .fontWeight(ICON_WEIGHT)
-                .imageScale(.medium)
-                .contentShape(Rectangle())
-        }
-        .frame(width:iconSize)
-    }
-    private func singleQuoteButton() -> some View {
-        Button {
-            model.insertParentheses(type:.singleQuotaion)
-        } label: {
-            Text(String("\' \'"))
-                .fontWeight(ICON_WEIGHT)
-                .imageScale(.medium)
-                .contentShape(Rectangle())
-        }
-        .frame(width:iconSize)
-    }
-}
+import SwiftUI
 extension HighlightrTextViewModel{
-    func dismissKeyboard() {
+    public func dismissKeyboard() {
         textView.resignFirstResponder()
     }
-    func focusKeyboard(){
+    public func focusKeyboard(){
         textView.becomeFirstResponder()
     }
-    func undo(){
+    public func undo(){
         guard let undoManager = textView.undoManager else { return }
         undoManager.undo()
     }
-    func insertIndent() {
+    public func insertIndent() {
         let selectedRange = textView.selectedRange
         let currentText = textView.text as NSString
         let indent = "    " // 4 spaces
@@ -151,7 +34,7 @@ extension HighlightrTextViewModel{
             textView.selectedTextRange = textView.textRange(from: newPosition, to: newPosition)
         }
     }
-    func insertCurlyBraces() {
+    public func insertCurlyBraces() {
         let selectedRange = textView.selectedRange
         let currentText = textView.text as NSString
         
@@ -190,12 +73,12 @@ extension HighlightrTextViewModel{
             textView.selectedTextRange = textView.textRange(from: newPosition, to: newPosition)
         }
     }
-    func clearText() {
+    public func clearText() {
         self.registerUndo()
         self.setText( "")
     }
     
-    func deleteCurrentLine() {
+    public func deleteCurrentLine() {
         // 現在の選択範囲（カーソル位置）を取得
         let selectedRange = textView.selectedRange
         let currentText = textView.text as NSString
@@ -216,7 +99,7 @@ extension HighlightrTextViewModel{
         }
         
     }
-    enum insertParentType: String,CaseIterable {
+    public enum insertParentType: String,CaseIterable {
         case kakko
         case singleQuotaion
         case doubleQuotaion
@@ -230,7 +113,7 @@ extension HighlightrTextViewModel{
         }
     }
 
-    func insertParentheses(type:insertParentType) {
+    public func insertParentheses(type:insertParentType) {
         self.registerUndo()
         
         let selectedRange = textView.selectedRange

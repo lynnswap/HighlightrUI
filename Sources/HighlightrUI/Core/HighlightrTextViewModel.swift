@@ -7,29 +7,27 @@
 
 import SwiftUI
 import Highlightr
+
 #if canImport(UIKit)
-typealias PAM_HighlightrTextView = UITextView
-typealias PAM_TextView = UITextView
-
+public typealias PAM_HighlightrTextView = UITextView
+public typealias PAM_TextView = UITextView
 #elseif canImport(AppKit)
-typealias PAM_HighlightrTextView = NSScrollView
-typealias PAM_TextView = NSTextView
-
-
+public typealias PAM_HighlightrTextView = NSScrollView
+public typealias PAM_TextView = NSTextView
 #endif
 
 @MainActor
-@Observable class HighlightrTextViewModel: NSObject{
-    @ObservationIgnored lazy var codeAttributedString : CodeAttributedString = {
+@Observable public class HighlightrTextViewModel: NSObject{
+    @ObservationIgnored public lazy var codeAttributedString : CodeAttributedString = {
         let container = CodeAttributedString()
         container.language = self.language
         return container
     }()
-    @ObservationIgnored var highlightr:Highlightr{
+    @ObservationIgnored public var highlightr:Highlightr{
         self.codeAttributedString.highlightr
     }
-    var pam_textView:PAM_TextView?
-    @ObservationIgnored lazy var textView : PAM_HighlightrTextView = {
+    public var pam_textView:PAM_TextView?
+    @ObservationIgnored public lazy var textView : PAM_HighlightrTextView = {
 #if canImport(UIKit)
         let layoutManager = NSLayoutManager()
         let textStorage = codeAttributedString
@@ -50,9 +48,6 @@ typealias PAM_TextView = NSTextView
         textView.spellCheckingType = .no
         textView.keyboardDismissMode = .interactive
         
-        textView.inputAccessoryView = AccessoryInputView{
-            HighlightrTextToolbarView(model:self)
-        }
         pam_textView = textView
         
         
@@ -90,17 +85,17 @@ typealias PAM_TextView = NSTextView
     }()
     @ObservationIgnored var language:String
     
-    private(set) var text:String = ""
+    public private(set) var text:String = ""
 #if os(iOS)
-    private(set) var isForcused:Bool = false
+    public private(set) var isForcused:Bool = false
 #endif
     
-    init(
+    public init(
         _ language:String
     ){
         self.language = language
     }
-    func setText(
+    public func setText(
         _ inputText: String,
         initial: Bool = false
     ) {
@@ -155,14 +150,14 @@ extension NSTextView{
 
 #if canImport(UIKit)
 extension HighlightrTextViewModel:UITextViewDelegate{
-    func textViewDidChange(_ textView: UITextView){
+    public func textViewDidChange(_ textView: UITextView){
         self.text = textView.text
     }
 }
 #endif
 
 extension HighlightrTextViewModel {
-    func registerUndo() {
+    public func registerUndo() {
         guard let textView = pam_textView,
               let manager = textView.undoManager  else { return }
 #if os(iOS)
@@ -221,15 +216,15 @@ extension HighlightrTextViewModel {
 }
 extension HighlightrTextViewModel{
 #if canImport(UIKit)
-    func textView(_ textView: PAM_TextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+    public func textView(_ textView: PAM_TextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         return textView_shouldChangeTextIn(textView,shouldChangeTextIn:range,replacementText:text)
     }
 #elseif canImport(AppKit)
-    func textView(_ textView: PAM_TextView, shouldChangeTextIn range: NSRange, replacementString text: String?) -> Bool {
+    public func textView(_ textView: PAM_TextView, shouldChangeTextIn range: NSRange, replacementString text: String?) -> Bool {
         return textView_shouldChangeTextIn(textView,shouldChangeTextIn:range,replacementText:text ?? "")
     }
 #endif
-    func textView_shouldChangeTextIn(
+    public func textView_shouldChangeTextIn(
         _ textView: PAM_TextView,
         shouldChangeTextIn range: NSRange,
         replacementText text: String
@@ -268,16 +263,16 @@ extension HighlightrTextViewModel{
         // すでに改行を処理したのでfalseを返してデフォルトの挙動を無効化
         return false
     }
-    func setTheme(_ theme:String){
+    public func setTheme(_ theme:String){
         self.codeAttributedString.highlightr.setTheme(to: theme)
     }
 
 #if os(iOS)
-    func textViewDidBeginEditing(_ textView: UITextView) {
+    public func textViewDidBeginEditing(_ textView: UITextView) {
         self.isForcused = true
     }
 
-    func textViewDidEndEditing(_ textView: UITextView) {
+    public func textViewDidEndEditing(_ textView: UITextView) {
         self.isForcused = false
     }
 #endif
