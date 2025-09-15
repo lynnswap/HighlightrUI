@@ -6,25 +6,39 @@
 //
 
 import SwiftUI
+
 public struct HighlightrTextView: View{
     @Binding private var text:String
     private let language: String
-  
-    @State var model:HighlightrTextViewModel?
     
-    public init(text: Binding<String>, language: String) {
-        self._text    = text
+    @State var model:HighlightrTextViewModel?
+#if canImport(UIKit)
+    var _inputAccessoryView: UIView?
+    var _accessoryBuilder: ((HighlightrTextViewModel) -> UIView?)?
+#endif
+    
+    public init(
+        text: Binding<String>,
+        language: String
+    ) {
+        self._text = text
         self.language = language
     }
     
     public var body:some View{
         if let model {
+#if canImport(UIKit)
+            let accessory = _accessoryBuilder?(model) ?? _inputAccessoryView
+            HighlightrTextViewRepresentable(model:model, inputAccessoryView: accessory)
+                .padding(.leading,4)
+                .highlightrToolbar(model)
+                .highlightrTextSync(model, text: $text)
+                .navigationBarTitleDisplayMode(.inline)
+#else
             HighlightrTextViewRepresentable(model:model)
                 .padding(.leading,4)
                 .highlightrToolbar(model)
                 .highlightrTextSync(model, text: $text)
-#if canImport(UIKit)
-                .navigationBarTitleDisplayMode(.inline)
 #endif
         }else{
             Color.clear
@@ -33,8 +47,37 @@ public struct HighlightrTextView: View{
                 }
         }
     }
-    
 }
+ 
+
+
+
+#if canImport(UIKit)
+struct HighlightrTextViewRepresentable: UIViewRepresentable {
+    var model: HighlightrTextViewModel
+    var inputAccessoryView: UIView?
+
+    func makeUIView(context: Context) -> PAM_HighlightrTextView {
+        let tv = model.textView
+        tv.inputAccessoryView = inputAccessoryView
+        return tv
+    }
+
+    func updateUIView(_ uiView: PAM_HighlightrTextView, context: Context) {
+    }
+}
+
+#elseif canImport(AppKit)
+struct HighlightrTextViewRepresentable: NSViewRepresentable {
+    var model:HighlightrTextViewModel
+    func makeNSView(context: Context) -> PAM_HighlightrTextView {
+        return model.textView
+    }
+    func updateNSView(_ uiView: PAM_HighlightrTextView, context: Context) {
+    }
+}
+#endif
+
 #if DEBUG
 #Preview{
     HighlightrTextViewWrapper()
@@ -45,8 +88,20 @@ struct HighlightrTextViewWrapper:View{
     var body:some View{
         NavigationStack{
             HighlightrTextView(text:$text,language:"javascript")
+#if canImport(UIKit)
+                .inputAccessory { model in
+                    HStack{
+                        Spacer()
+                        Button{
+                            model.dismissKeyboard()
+                        }label:{
+                            Image(systemName:"chevron.down")
+                        }
+                    }
+                }
+#endif
                 .theme($theme)
-            TextEditor(text: $text)
+            
         }
     }
 }
@@ -63,23 +118,4 @@ function searchResults(){
 }
 """
 #endif
-#if canImport(UIKit)
-struct HighlightrTextViewRepresentable: UIViewRepresentable {
-    var model:HighlightrTextViewModel
-    func makeUIView(context: Context) -> PAM_HighlightrTextView {
-        return model.textView
-    }
-    func updateUIView(_ uiView: PAM_HighlightrTextView, context: Context) {
-    }
-}
 
-#elseif canImport(AppKit)
-struct HighlightrTextViewRepresentable: NSViewRepresentable {
-    var model:HighlightrTextViewModel
-    func makeNSView(context: Context) -> PAM_HighlightrTextView {
-        return model.textView
-    }
-    func updateNSView(_ uiView: PAM_HighlightrTextView, context: Context) {
-    }
-}
-#endif

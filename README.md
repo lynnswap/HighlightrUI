@@ -32,6 +32,49 @@ struct ContentView: View {
 }
 ```
 
+## iOS Input Accessory
+
+Attach a keyboard accessory to `HighlightrTextView` on iOS.
+
+- `inputAccessoryView(_ view: UIView?)`: Attach any UIKit view as the accessory.
+- `inputAccessoryView(_ builder: (HighlightrTextViewModel) -> UIView?)`: Build a UIKit view with access to the editor model.
+- `inputAccessory(_ content: (HighlightrTextViewModel) -> some View)`: Provide a SwiftUI accessory; it is wrapped under the hood.
+
+SwiftUI example:
+
+```swift
+HighlightrTextView(text: $text, language: "javascript")
+    .inputAccessory { model in
+        HStack {
+            Spacer()
+            Button {
+                model.dismissKeyboard()
+            } label: {
+                Image(systemName: "chevron.down")
+            }
+        }
+    }
+```
+
+UIKit builder example:
+
+```swift
+HighlightrTextView(text: $text, language: "javascript")
+    .inputAccessoryView { model in
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "chevron.down"), for: .normal)
+        button.addAction(UIAction { _ in model.dismissKeyboard() }, for: .touchUpInside)
+
+        let toolbar = UIToolbar()
+        toolbar.items = [
+            UIBarButtonItem.flexibleSpace(),
+            UIBarButtonItem(customView: button)
+        ]
+        toolbar.sizeToFit()
+        return toolbar
+    }
+```
+
 ## Apps Using
 
 <p float="left">
