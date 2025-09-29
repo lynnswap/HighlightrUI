@@ -59,7 +59,7 @@ public struct HighlightrJSConsoleView:View{
 #endif
         }else{
             Color.clear
-                .task{
+                .onAppear{
                     self.model = HighlightrTextViewModel("javascript")
                 }
         }

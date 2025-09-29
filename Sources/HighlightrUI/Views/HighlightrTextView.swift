@@ -40,7 +40,7 @@ public struct HighlightrTextView: View{
 #endif
         }else{
             Color.clear
-                .task{
+                .onAppear{
                     self.model = HighlightrTextViewModel(language)
                 }
         }
