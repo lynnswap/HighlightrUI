@@ -19,10 +19,8 @@ let model = HighlightrEditorModel(
     language: "javascript"
 )
 
-let editor = HighlightrEditorView(model: model)
-editor.setInputAccessoryView(UIToolbar())
-
-let controller = HighlightrEditorViewController(editorView: editor)
+let controller = HighlightrEditorViewController(model: model)
+controller.perform(.focus)
 ```
 
 ## AppKit Example
@@ -36,9 +34,10 @@ let model = HighlightrEditorModel(
     language: "swift"
 )
 
-let editor = HighlightrEditorView(model: model)
-let controller = HighlightrEditorViewController(editorView: editor)
+let controller = HighlightrEditorViewController(model: model)
 ```
+
+On iOS, `HighlightrEditorViewController` includes a built-in fixed coding keyboard toolbar.
 
 ## Core API
 

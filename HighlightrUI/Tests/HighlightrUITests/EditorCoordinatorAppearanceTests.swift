@@ -2,6 +2,22 @@ import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 
+@MainActor
+private func waitUntil(
+    timeoutNanoseconds: UInt64 = 3_000_000_000,
+    condition: @escaping @MainActor () -> Bool
+) async {
+    let clock = ContinuousClock()
+    let start = clock.now
+
+    while !condition() {
+        if start.duration(to: clock.now) >= .nanoseconds(Int64(timeoutNanoseconds)) {
+            break
+        }
+        await AsyncDrain.firstTurn()
+    }
+}
+
 #if canImport(UIKit)
 import UIKit
 
@@ -28,7 +44,9 @@ struct EditorCoordinatorAppearanceTests {
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
 
         model.theme = .named("github")
-        await AsyncDrain.firstTurn()
+        await waitUntil {
+            engine.setThemeNameCalls == ["paraiso-light", "github"]
+        }
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
 
         model.theme = .named("github")
@@ -90,7 +108,9 @@ struct EditorCoordinatorAppearanceTests {
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
 
         model.theme = .named("github")
-        await AsyncDrain.firstTurn()
+        await waitUntil {
+            engine.setThemeNameCalls == ["paraiso-light", "github"]
+        }
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
 
         model.theme = .named("github")

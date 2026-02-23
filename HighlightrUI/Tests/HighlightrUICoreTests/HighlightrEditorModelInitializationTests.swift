@@ -13,6 +13,8 @@ struct HighlightrEditorModelInitializationTests {
         #expect(model.selection == .zero)
         #expect(model.isEditable)
         #expect(!model.isFocused)
+        #expect(!model.isUndoable)
+        #expect(!model.isRedoable)
     }
 
     @Test
@@ -30,5 +32,7 @@ struct HighlightrEditorModelInitializationTests {
         #expect(model.selection == .zero)
         #expect(!model.isEditable)
         #expect(!model.isFocused)
+        #expect(!model.isUndoable)
+        #expect(!model.isRedoable)
     }
 }

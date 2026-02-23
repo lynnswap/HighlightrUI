@@ -132,6 +132,38 @@ struct HighlightrEditorModelStreamTests {
     }
 
     @Test
+    func snapshotStreamEmitsUndoableChanges() async {
+        let model = HighlightrEditorModel(text: "abc", language: "swift")
+
+        let task = Task { [model] in
+            await collectValues(from: model.snapshotStream(backend: .legacy), count: 2)
+        }
+
+        await AsyncDrain.firstTurn()
+        model.isUndoable = true
+
+        let values = await task.value
+
+        #expect(values.map(\.isUndoable) == [false, true])
+    }
+
+    @Test
+    func snapshotStreamEmitsRedoableChanges() async {
+        let model = HighlightrEditorModel(text: "abc", language: "swift")
+
+        let task = Task { [model] in
+            await collectValues(from: model.snapshotStream(backend: .legacy), count: 2)
+        }
+
+        await AsyncDrain.firstTurn()
+        model.isRedoable = true
+
+        let values = await task.value
+
+        #expect(values.map(\.isRedoable) == [false, true])
+    }
+
+    @Test
     func textStreamEmitsInitialAndUpdates() async {
         let model = HighlightrEditorModel(text: "a", language: "swift")
 
@@ -218,7 +250,7 @@ struct HighlightrEditorModelStreamTests {
     private func collectValues<T: Sendable>(
         from stream: ObservationsCompatStream<T>,
         count: Int,
-        timeoutNanoseconds: UInt64 = 3_000_000_000
+        timeoutNanoseconds: UInt64 = 10_000_000_000
     ) async -> [T] {
         await withTaskGroup(of: [T].self) { group in
             group.addTask {

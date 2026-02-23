@@ -30,7 +30,9 @@ struct ValueTypesTests {
             theme: .named("github"),
             selection: TextSelection(location: 1, length: 1),
             isEditable: true,
-            isFocused: false
+            isFocused: false,
+            isUndoable: false,
+            isRedoable: false
         )
 
         let rhs = EditorSnapshot(
@@ -39,7 +41,9 @@ struct ValueTypesTests {
             theme: .named("github"),
             selection: TextSelection(location: 1, length: 1),
             isEditable: true,
-            isFocused: false
+            isFocused: false,
+            isUndoable: false,
+            isRedoable: false
         )
 
         #expect(lhs == rhs)

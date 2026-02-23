@@ -18,6 +18,8 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     private var lastModelRevision: UInt64 = 0
 
     private var isApplyingFromModel = false
+    private var autoIndentOnNewline = false
+    private var isHandlingAutoIndent = false
     private var appliedLanguage: EditorLanguage?
     private var appliedThemeName: String?
 
@@ -50,6 +52,10 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         applyThemeIfNeeded(model.theme, force: true)
     }
 
+    func setAutoIndentOnNewline(_ enabled: Bool) {
+        autoIndentOnNewline = enabled
+    }
+
     func textViewDidChange(_ textView: UITextView) {
         syncModelFromView()
     }
@@ -64,6 +70,42 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
 
     func textViewDidEndEditing(_ textView: UITextView) {
         syncModelFromView(focusOverride: false)
+    }
+
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        guard
+            autoIndentOnNewline,
+            !isApplyingFromModel,
+            !isHandlingAutoIndent,
+            text == "\n"
+        else {
+            return true
+        }
+
+        let currentText = textView.text ?? ""
+        let safeRange = Self.clampedRange(range, in: currentText)
+        let indent = Self.leadingIndent(in: currentText, at: safeRange.location)
+        let replacement = "\n" + indent
+
+        guard
+            let start = textView.position(from: textView.beginningOfDocument, offset: safeRange.location),
+            let end = textView.position(from: start, offset: safeRange.length),
+            let textRange = textView.textRange(from: start, to: end)
+        else {
+            return true
+        }
+
+        isHandlingAutoIndent = true
+        defer { isHandlingAutoIndent = false }
+
+        textView.replace(textRange, withText: replacement)
+        let cursorLocation = safeRange.location + (replacement as NSString).length
+        if let position = textView.position(from: textView.beginningOfDocument, offset: cursorLocation),
+           let selectedRange = textView.textRange(from: position, to: position) {
+            textView.selectedTextRange = selectedRange
+        }
+        syncModelFromView()
+        return false
     }
 
     private func startSnapshotSync() {
@@ -100,6 +142,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         if model.isFocused != focused {
             model.isFocused = focused
         }
+        syncUndoAvailabilityFromView(textView)
     }
 
     private func applyModelSnapshot(_ snapshot: EditorSnapshot) {
@@ -135,6 +178,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         } else if textView.isFirstResponder {
             _ = textView.resignFirstResponder()
         }
+        syncUndoAvailabilityFromView(textView)
     }
 
     private func applyLanguageIfNeeded(_ language: EditorLanguage) {
@@ -150,12 +194,45 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         appliedThemeName = themeName
     }
 
+    private func syncUndoAvailabilityFromView(_ textView: UITextView) {
+        let canUndo = textView.undoManager?.canUndo ?? false
+        if model.isUndoable != canUndo {
+            model.isUndoable = canUndo
+        }
+
+        let canRedo = textView.undoManager?.canRedo ?? false
+        if model.isRedoable != canRedo {
+            model.isRedoable = canRedo
+        }
+    }
+
     private static func clampedSelection(_ selection: TextSelection, text: String) -> TextSelection {
         let textLength = (text as NSString).length
         let clampedLocation = min(max(0, selection.location), textLength)
         let remaining = max(0, textLength - clampedLocation)
         let clampedLength = min(max(0, selection.length), remaining)
         return TextSelection(location: clampedLocation, length: clampedLength)
+    }
+
+    private static func clampedRange(_ range: NSRange, in text: String) -> NSRange {
+        let textLength = (text as NSString).length
+        let location = min(max(0, range.location), textLength)
+        let remaining = max(0, textLength - location)
+        let length = min(max(0, range.length), remaining)
+        return NSRange(location: location, length: length)
+    }
+
+    private static func leadingIndent(in text: String, at location: Int) -> String {
+        let source = text as NSString
+        guard source.length > 0 else { return "" }
+
+        let safeLocation = min(max(0, location), source.length)
+        let lineRange = source.lineRange(for: NSRange(location: safeLocation, length: 0))
+        let line = source.substring(with: lineRange)
+        guard let indentRange = line.range(of: "^[ \\t]*", options: .regularExpression) else {
+            return ""
+        }
+        return String(line[indentRange])
     }
 }
 
@@ -181,6 +258,8 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     private var lastModelRevision: UInt64 = 0
 
     private var isApplyingFromModel = false
+    private var autoIndentOnNewline = false
+    private var isHandlingAutoIndent = false
     private var appliedLanguage: EditorLanguage?
     private var appliedThemeName: String?
 
@@ -213,6 +292,10 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         applyThemeIfNeeded(model.theme, force: true)
     }
 
+    func setAutoIndentOnNewline(_ enabled: Bool) {
+        autoIndentOnNewline = enabled
+    }
+
     func textDidChange(_ notification: Notification) {
         syncModelFromView()
     }
@@ -227,6 +310,30 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
 
     func textViewDidChangeSelection(_ notification: Notification) {
         syncModelFromView()
+    }
+
+    func textView(_ textView: NSTextView, shouldChangeTextIn range: NSRange, replacementString text: String?) -> Bool {
+        guard
+            autoIndentOnNewline,
+            !isApplyingFromModel,
+            !isHandlingAutoIndent,
+            text == "\n"
+        else {
+            return true
+        }
+
+        let safeRange = Self.clampedRange(range, in: textView.string)
+        let indent = Self.leadingIndent(in: textView.string, at: safeRange.location)
+        let replacement = "\n" + indent
+
+        isHandlingAutoIndent = true
+        defer { isHandlingAutoIndent = false }
+
+        textView.insertText(replacement, replacementRange: safeRange)
+        let cursorLocation = safeRange.location + (replacement as NSString).length
+        textView.setSelectedRange(NSRange(location: cursorLocation, length: 0))
+        syncModelFromView()
+        return false
     }
 
     private func startSnapshotSync() {
@@ -263,6 +370,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         if model.isFocused != focused {
             model.isFocused = focused
         }
+        syncUndoAvailabilityFromView(textView)
     }
 
     private func applyModelSnapshot(_ snapshot: EditorSnapshot) {
@@ -298,6 +406,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         } else if textView.window?.firstResponder === textView {
             textView.window?.makeFirstResponder(nil)
         }
+        syncUndoAvailabilityFromView(textView)
     }
 
     private func applyLanguageIfNeeded(_ language: EditorLanguage) {
@@ -313,12 +422,45 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         appliedThemeName = themeName
     }
 
+    private func syncUndoAvailabilityFromView(_ textView: NSTextView) {
+        let canUndo = textView.undoManager?.canUndo ?? false
+        if model.isUndoable != canUndo {
+            model.isUndoable = canUndo
+        }
+
+        let canRedo = textView.undoManager?.canRedo ?? false
+        if model.isRedoable != canRedo {
+            model.isRedoable = canRedo
+        }
+    }
+
     private static func clampedSelection(_ selection: TextSelection, text: String) -> TextSelection {
         let textLength = (text as NSString).length
         let clampedLocation = min(max(0, selection.location), textLength)
         let remaining = max(0, textLength - clampedLocation)
         let clampedLength = min(max(0, selection.length), remaining)
         return TextSelection(location: clampedLocation, length: clampedLength)
+    }
+
+    private static func clampedRange(_ range: NSRange, in text: String) -> NSRange {
+        let textLength = (text as NSString).length
+        let location = min(max(0, range.location), textLength)
+        let remaining = max(0, textLength - location)
+        let length = min(max(0, range.length), remaining)
+        return NSRange(location: location, length: length)
+    }
+
+    private static func leadingIndent(in text: String, at location: Int) -> String {
+        let source = text as NSString
+        guard source.length > 0 else { return "" }
+
+        let safeLocation = min(max(0, location), source.length)
+        let lineRange = source.lineRange(for: NSRange(location: safeLocation, length: 0))
+        let line = source.substring(with: lineRange)
+        guard let indentRange = line.range(of: "^[ \\t]*", options: .regularExpression) else {
+            return ""
+        }
+        return String(line[indentRange])
     }
 }
 

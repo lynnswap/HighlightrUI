@@ -14,6 +14,7 @@ This guide summarizes breaking changes introduced in HighlightrUI v2.
 - `HighlightrTextViewModel` -> `HighlightrEditorModel`
 - `HighlightrJSConsoleView` -> removed (out of v2 core scope)
 - SwiftUI modifiers (`theme`, toolbar modifiers, accessory modifiers) -> removed
+- No external replacement API is provided for the iOS accessory view; use the fixed keyboard toolbar built into `HighlightrEditorViewController`.
 
 ## Platform and Toolchain
 

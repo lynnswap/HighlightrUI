@@ -13,6 +13,8 @@ struct HighlightrEditorModelSnapshotTests {
         model.selection = TextSelection(location: 2, length: 3)
         model.isEditable = false
         model.isFocused = true
+        model.isUndoable = true
+        model.isRedoable = true
 
         let snapshot = model.snapshot()
 
@@ -22,5 +24,7 @@ struct HighlightrEditorModelSnapshotTests {
         #expect(snapshot.selection == TextSelection(location: 2, length: 3))
         #expect(!snapshot.isEditable)
         #expect(snapshot.isFocused)
+        #expect(snapshot.isUndoable)
+        #expect(snapshot.isRedoable)
     }
 }

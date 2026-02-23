@@ -70,6 +70,7 @@ struct EditorCoordinatorSyncTests {
 
         model.selection = TextSelection(location: -10, length: 40)
         await AsyncDrain.firstTurn()
+        await AsyncDrain.shortDelay()
 
         #expect(textView.selectedRange == NSRange(location: 0, length: 3))
     }
@@ -89,6 +90,7 @@ struct EditorCoordinatorSyncTests {
 
         model.selection = TextSelection(location: 100, length: 20)
         await AsyncDrain.firstTurn()
+        await AsyncDrain.shortDelay()
 
         #expect(textView.selectedRange == NSRange(location: 3, length: 0))
     }
@@ -134,9 +136,12 @@ struct EditorCoordinatorSyncTests {
         #expect(engine.setLanguageCalls == ["swift"])
 
         model.language = "json"
-        await AsyncDrain.firstTurn()
+        for _ in 0..<20 where engine.setLanguageCalls != ["swift", "json"] {
+            await AsyncDrain.firstTurn()
+        }
         #expect(engine.setLanguageCalls == ["swift", "json"])
     }
+
 }
 
 #elseif canImport(AppKit)
@@ -206,6 +211,7 @@ struct EditorCoordinatorSyncTests {
 
         model.selection = TextSelection(location: -10, length: 40)
         await AsyncDrain.firstTurn()
+        await AsyncDrain.shortDelay()
 
         #expect(textView.selectedRange() == NSRange(location: 0, length: 3))
     }
@@ -225,6 +231,7 @@ struct EditorCoordinatorSyncTests {
 
         model.selection = TextSelection(location: 100, length: 20)
         await AsyncDrain.firstTurn()
+        await AsyncDrain.shortDelay()
 
         #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
     }
@@ -270,8 +277,44 @@ struct EditorCoordinatorSyncTests {
         #expect(engine.setLanguageCalls == ["swift"])
 
         model.language = "json"
-        await AsyncDrain.firstTurn()
+        for _ in 0..<20 where engine.setLanguageCalls != ["swift", "json"] {
+            await AsyncDrain.firstTurn()
+        }
         #expect(engine.setLanguageCalls == ["swift", "json"])
+    }
+
+    @Test
+    func undoAvailabilityMirrorsUndoManagerState() async {
+        let model = HighlightrEditorModel(text: "", language: "swift")
+        let textView = NSTextView(frame: .zero)
+        textView.allowsUndo = true
+        let engine = MockSyntaxHighlightingEngine()
+        let coordinator = EditorCoordinator(
+            model: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+        defer { coordinator.invalidate() }
+
+        await AsyncDrain.firstTurn()
+        #expect(model.isUndoable == (textView.undoManager?.canUndo ?? false))
+        #expect(model.isRedoable == (textView.undoManager?.canRedo ?? false))
+
+        textView.undoManager?.groupsByEvent = false
+        textView.insertText("a", replacementRange: textView.selectedRange())
+        coordinator.textDidChange(Notification(name: NSText.didChangeNotification, object: textView))
+        await AsyncDrain.firstTurn()
+
+        #expect(model.isUndoable == (textView.undoManager?.canUndo ?? false))
+        #expect(model.isRedoable == (textView.undoManager?.canRedo ?? false))
+
+        textView.undoManager?.undo()
+        coordinator.textDidChange(Notification(name: NSText.didChangeNotification, object: textView))
+        await AsyncDrain.firstTurn()
+
+        #expect(model.isUndoable == (textView.undoManager?.canUndo ?? false))
+        #expect(model.isRedoable == (textView.undoManager?.canRedo ?? false))
     }
 }
 #endif

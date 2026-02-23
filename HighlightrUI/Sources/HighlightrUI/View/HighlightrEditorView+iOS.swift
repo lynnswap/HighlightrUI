@@ -87,11 +87,15 @@ public final class HighlightrEditorView: UIView {
         model.isFocused = platformTextView.isFirstResponder
     }
 
-    public func setInputAccessoryView(_ view: UIView?) {
+    func setInputAccessoryView(_ view: UIView?) {
         platformTextView.inputAccessoryView = view
         if platformTextView.isFirstResponder {
             platformTextView.reloadInputViews()
         }
+    }
+
+    func setAutoIndentOnNewline(_ enabled: Bool) {
+        coordinator.setAutoIndentOnNewline(enabled)
     }
 
     private func setupHierarchy() {

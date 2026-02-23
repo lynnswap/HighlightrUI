@@ -80,6 +80,10 @@ public final class HighlightrEditorView: NSView {
         model.isFocused = window?.firstResponder === platformTextView
     }
 
+    func setAutoIndentOnNewline(_ enabled: Bool) {
+        coordinator.setAutoIndentOnNewline(enabled)
+    }
+
     private func setupHierarchy() {
         addSubview(scrollView)
         scrollView.translatesAutoresizingMaskIntoConstraints = false

@@ -11,6 +11,8 @@ public final class HighlightrEditorModel {
     public var selection: TextSelection
     public var isEditable: Bool
     public var isFocused: Bool
+    public var isUndoable: Bool
+    public var isRedoable: Bool
 
     public init(
         text: String = "",
@@ -24,6 +26,8 @@ public final class HighlightrEditorModel {
         self.selection = .zero
         self.isEditable = isEditable
         self.isFocused = false
+        self.isUndoable = false
+        self.isRedoable = false
     }
 
     public func snapshot() -> EditorSnapshot {
@@ -33,7 +37,9 @@ public final class HighlightrEditorModel {
             theme: theme,
             selection: selection,
             isEditable: isEditable,
-            isFocused: isFocused
+            isFocused: isFocused,
+            isUndoable: isUndoable,
+            isRedoable: isRedoable
         )
     }
 
