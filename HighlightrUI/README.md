@@ -8,15 +8,6 @@
 - iOS 18.0+
 - macOS 15.0+
 
-## Architecture
-
-- `HighlightrUICore`
-- `@Observable` state model (`HighlightrEditorModel`)
-- `ObservationsCompat` stream APIs for OS-compatible observation
-- `HighlightrUI`
-- UIKit/AppKit views and controllers
-- engine abstraction (`SyntaxHighlightingEngine`) with `HighlightrEngine` default implementation
-
 ## UIKit Example
 
 ```swift
@@ -64,8 +55,8 @@ Task {
 
 ## Migration
 
-See the migration guide: [`Docs/Migration.md`](Docs/Migration.md)
+See [`Migration`](Docs/Migration.md).
 
 ## License
 
-MIT
+[MIT](LICENSE)
