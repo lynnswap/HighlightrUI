@@ -15,24 +15,29 @@ final class EditorCommandExecutor {
         editorView.platformTextView
     }
 
-    private var model: HighlightrEditorModel {
-        editorView.model
-    }
-
     func canPerform(_ command: HighlightrEditorCommand) -> Bool {
+        let model = editorView.model
         switch command {
         case .focus:
-            return textView.window?.firstResponder !== textView
-        case .blur, .dismissKeyboard:
-            return textView.window?.firstResponder === textView
+            return !model.isFocused
+        case .blur:
+            return model.isFocused
+        case .dismissKeyboard:
+            return model.isFocused
         case .undo:
-            return model.isEditable && textView.isEditable && textView.undoManager?.canUndo == true
+            return model.isEditable && model.isUndoable
         case .redo:
-            return model.isEditable && textView.isEditable && textView.undoManager?.canRedo == true
-        case .insertIndent, .insertCurlyBraces, .insertPair:
-            return model.isEditable && textView.isEditable
-        case .deleteCurrentLine, .clearText:
-            return model.isEditable && textView.isEditable && !textView.string.isEmpty
+            return model.isEditable && model.isRedoable
+        case .insertIndent:
+            return model.isEditable
+        case .insertCurlyBraces:
+            return model.isEditable
+        case .insertPair:
+            return model.isEditable
+        case .deleteCurrentLine:
+            return model.isEditable && model.hasText
+        case .clearText:
+            return model.isEditable && model.hasText
         }
     }
 
@@ -45,11 +50,11 @@ final class EditorCommandExecutor {
         case .undo:
             guard canPerform(.undo) else { return }
             textView.undoManager?.undo()
-            syncModelFromTextView()
+            editorView.coordinator.syncStateFromView()
         case .redo:
             guard canPerform(.redo) else { return }
             textView.undoManager?.redo()
-            syncModelFromTextView()
+            editorView.coordinator.syncStateFromView()
         case .insertIndent:
             insertIndent()
         case .insertCurlyBraces:
@@ -164,35 +169,7 @@ final class EditorCommandExecutor {
             textView.insertText(replacement, replacementRange: safeRange)
             textView.setSelectedRange(targetSelection)
         }
-        syncModelFromTextView()
-    }
-
-    private func syncModelFromTextView() {
-        let text = textView.string
-        if model.text != text {
-            model.text = text
-        }
-
-        let selection = textView.selectedRange()
-        let currentSelection = TextSelection(location: selection.location, length: selection.length)
-        if model.selection != currentSelection {
-            model.selection = currentSelection
-        }
-
-        let focused = textView.window?.firstResponder === textView
-        if model.isFocused != focused {
-            model.isFocused = focused
-        }
-
-        let canUndo = textView.undoManager?.canUndo ?? false
-        if model.isUndoable != canUndo {
-            model.isUndoable = canUndo
-        }
-
-        let canRedo = textView.undoManager?.canRedo ?? false
-        if model.isRedoable != canRedo {
-            model.isRedoable = canRedo
-        }
+        editorView.coordinator.syncStateFromView()
     }
 
     private func pairCharacters(for kind: HighlightrEditorPairKind) -> (String, String) {

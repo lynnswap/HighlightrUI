@@ -5,6 +5,8 @@ import HighlightrUICore
 @MainActor
 public final class HighlightrEditorViewController: NSViewController {
     public let editorView: HighlightrEditorView
+    public var model: HighlightrEditorModel { editorView.model }
+
     private let commandExecutor: EditorCommandExecutor
     private let configuration: HighlightrEditorViewControllerConfiguration
 

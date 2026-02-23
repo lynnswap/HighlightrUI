@@ -9,16 +9,11 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     private let model: HighlightrEditorModel
     private weak var textView: UITextView?
     private let engine: any SyntaxHighlightingEngine
-    var onViewStateChanged: (@MainActor () -> Void)?
 
-    private var snapshotTask: Task<Void, Never>?
+    private var documentTask: Task<Void, Never>?
     private var colorScheme: EditorColorScheme
 
-    private var sourceRevision: UInt64 = 0
-    private var lastViewRevision: UInt64 = 0
-    private var lastModelRevision: UInt64 = 0
-
-    private var isApplyingFromModel = false
+    private var isApplyingFromDocument = false
     private var autoIndentOnNewline = false
     private var isHandlingAutoIndent = false
     private var appliedLanguage: EditorLanguage?
@@ -37,13 +32,14 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         super.init()
 
         textView.delegate = self
-        applyModelSnapshot(model.snapshot())
-        startSnapshotSync()
+        applyDocumentSnapshot(currentDocumentObservation)
+        syncRuntimeStateFromView(textView)
+        startDocumentSync()
     }
 
     isolated deinit {
-        snapshotTask?.cancel()
-        snapshotTask = nil
+        documentTask?.cancel()
+        documentTask = nil
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
@@ -55,26 +51,47 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         autoIndentOnNewline = enabled
     }
 
+    func syncStateFromView(focusOverride: Bool? = nil) {
+        guard let textView, !isApplyingFromDocument else { return }
+
+        let currentText = textView.text ?? ""
+        if model.text != currentText {
+            model.text = currentText
+        }
+
+        let selectedRange = textView.selectedRange
+        let selection = TextSelection(location: selectedRange.location, length: selectedRange.length)
+        if model.selection != selection {
+            model.selection = selection
+        }
+
+        if model.isEditable != textView.isEditable {
+            model.isEditable = textView.isEditable
+        }
+
+        syncRuntimeStateFromView(textView, focusOverride: focusOverride)
+    }
+
     func textViewDidChange(_ textView: UITextView) {
-        syncModelFromView()
+        syncStateFromView()
     }
 
     func textViewDidChangeSelection(_ textView: UITextView) {
-        syncModelFromView()
+        syncStateFromView()
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
-        syncModelFromView(focusOverride: true)
+        syncStateFromView(focusOverride: true)
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
-        syncModelFromView(focusOverride: false)
+        syncStateFromView(focusOverride: false)
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         guard
             autoIndentOnNewline,
-            !isApplyingFromModel,
+            !isApplyingFromDocument,
             !isHandlingAutoIndent,
             text == "\n"
         else {
@@ -103,57 +120,38 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
            let selectedRange = textView.textRange(from: position, to: position) {
             textView.selectedTextRange = selectedRange
         }
-        syncModelFromView()
+        syncStateFromView()
         return false
     }
 
-    private func startSnapshotSync() {
-        snapshotTask?.cancel()
-        let snapshotStream = model.snapshotStream()
-        snapshotTask = Task { [weak self] in
-            for await snapshot in snapshotStream {
+    private var currentDocumentObservation: EditorDocumentObservation {
+        EditorDocumentObservation(model: model)
+    }
+
+    private func startDocumentSync() {
+        documentTask?.cancel()
+        let stream = observeDocumentState(model: model)
+        documentTask = Task { [weak self] in
+            for await snapshot in stream {
                 if Task.isCancelled {
                     break
                 }
-                guard let self else { break }
-                self.applyModelSnapshot(snapshot)
+                guard let self else {
+                    break
+                }
+                guard snapshot == self.currentDocumentObservation else {
+                    continue
+                }
+                self.applyDocumentSnapshot(snapshot)
             }
         }
     }
 
-    private func syncModelFromView(focusOverride: Bool? = nil) {
-        guard let textView, !isApplyingFromModel else { return }
-
-        sourceRevision &+= 1
-        lastViewRevision = sourceRevision
-
-        let currentText = textView.text ?? ""
-        if model.text != currentText {
-            model.text = currentText
-        }
-
-        let selectedRange = textView.selectedRange
-        let selection = TextSelection(location: selectedRange.location, length: selectedRange.length)
-        if model.selection != selection {
-            model.selection = selection
-        }
-
-        let focused = focusOverride ?? textView.isFirstResponder
-        if model.isFocused != focused {
-            model.isFocused = focused
-        }
-        syncUndoAvailabilityFromView(textView)
-        onViewStateChanged?()
-    }
-
-    private func applyModelSnapshot(_ snapshot: EditorSnapshot) {
+    private func applyDocumentSnapshot(_ snapshot: EditorDocumentObservation) {
         guard let textView else { return }
 
-        sourceRevision &+= 1
-        lastModelRevision = sourceRevision
-
-        isApplyingFromModel = true
-        defer { isApplyingFromModel = false }
+        isApplyingFromDocument = true
+        defer { isApplyingFromDocument = false }
 
         applyLanguageIfNeeded(snapshot.language)
         applyThemeIfNeeded(snapshot.theme)
@@ -179,8 +177,30 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         } else if textView.isFirstResponder {
             _ = textView.resignFirstResponder()
         }
-        syncUndoAvailabilityFromView(textView)
-        onViewStateChanged?()
+
+        syncRuntimeStateFromView(textView)
+    }
+
+    private func syncRuntimeStateFromView(_ textView: UITextView, focusOverride: Bool? = nil) {
+        let focused = focusOverride ?? textView.isFirstResponder
+        if model.isFocused != focused {
+            model.isFocused = focused
+        }
+
+        let canUndo = textView.undoManager?.canUndo ?? false
+        if model.isUndoable != canUndo {
+            model.isUndoable = canUndo
+        }
+
+        let canRedo = textView.undoManager?.canRedo ?? false
+        if model.isRedoable != canRedo {
+            model.isRedoable = canRedo
+        }
+
+        let hasText = !(textView.text ?? "").isEmpty
+        if model.hasText != hasText {
+            model.hasText = hasText
+        }
     }
 
     private func applyLanguageIfNeeded(_ language: EditorLanguage) {
@@ -194,18 +214,6 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         guard force || themeName != appliedThemeName else { return }
         engine.setThemeName(themeName)
         appliedThemeName = themeName
-    }
-
-    private func syncUndoAvailabilityFromView(_ textView: UITextView) {
-        let canUndo = textView.undoManager?.canUndo ?? false
-        if model.isUndoable != canUndo {
-            model.isUndoable = canUndo
-        }
-
-        let canRedo = textView.undoManager?.canRedo ?? false
-        if model.isRedoable != canRedo {
-            model.isRedoable = canRedo
-        }
     }
 
     private static func clampedSelection(_ selection: TextSelection, text: String) -> TextSelection {
@@ -251,16 +259,11 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     private let model: HighlightrEditorModel
     private weak var textView: NSTextView?
     private let engine: any SyntaxHighlightingEngine
-    var onViewStateChanged: (@MainActor () -> Void)?
 
-    private var snapshotTask: Task<Void, Never>?
+    private var documentTask: Task<Void, Never>?
     private var colorScheme: EditorColorScheme
 
-    private var sourceRevision: UInt64 = 0
-    private var lastViewRevision: UInt64 = 0
-    private var lastModelRevision: UInt64 = 0
-
-    private var isApplyingFromModel = false
+    private var isApplyingFromDocument = false
     private var autoIndentOnNewline = false
     private var isHandlingAutoIndent = false
     private var appliedLanguage: EditorLanguage?
@@ -279,13 +282,14 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         super.init()
 
         textView.delegate = self
-        applyModelSnapshot(model.snapshot())
-        startSnapshotSync()
+        applyDocumentSnapshot(currentDocumentObservation)
+        syncRuntimeStateFromView(textView)
+        startDocumentSync()
     }
 
     isolated deinit {
-        snapshotTask?.cancel()
-        snapshotTask = nil
+        documentTask?.cancel()
+        documentTask = nil
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
@@ -297,26 +301,47 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         autoIndentOnNewline = enabled
     }
 
+    func syncStateFromView(focusOverride: Bool? = nil) {
+        guard let textView, !isApplyingFromDocument else { return }
+
+        let currentText = textView.string
+        if model.text != currentText {
+            model.text = currentText
+        }
+
+        let selectedRange = textView.selectedRange()
+        let selection = TextSelection(location: selectedRange.location, length: selectedRange.length)
+        if model.selection != selection {
+            model.selection = selection
+        }
+
+        if model.isEditable != textView.isEditable {
+            model.isEditable = textView.isEditable
+        }
+
+        syncRuntimeStateFromView(textView, focusOverride: focusOverride)
+    }
+
     func textDidChange(_ notification: Notification) {
-        syncModelFromView()
+        syncStateFromView()
     }
 
     func textDidBeginEditing(_ notification: Notification) {
-        syncModelFromView(focusOverride: true)
+        syncStateFromView(focusOverride: true)
     }
 
     func textDidEndEditing(_ notification: Notification) {
-        syncModelFromView(focusOverride: false)
+        syncStateFromView(focusOverride: false)
     }
 
     func textViewDidChangeSelection(_ notification: Notification) {
-        syncModelFromView()
+        syncStateFromView()
     }
 
     func textView(_ textView: NSTextView, shouldChangeTextIn range: NSRange, replacementString text: String?) -> Bool {
         guard
             autoIndentOnNewline,
-            !isApplyingFromModel,
+            !isApplyingFromDocument,
             !isHandlingAutoIndent,
             text == "\n"
         else {
@@ -333,57 +358,38 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         textView.insertText(replacement, replacementRange: safeRange)
         let cursorLocation = safeRange.location + (replacement as NSString).length
         textView.setSelectedRange(NSRange(location: cursorLocation, length: 0))
-        syncModelFromView()
+        syncStateFromView()
         return false
     }
 
-    private func startSnapshotSync() {
-        snapshotTask?.cancel()
-        let snapshotStream = model.snapshotStream()
-        snapshotTask = Task { [weak self] in
-            for await snapshot in snapshotStream {
+    private var currentDocumentObservation: EditorDocumentObservation {
+        EditorDocumentObservation(model: model)
+    }
+
+    private func startDocumentSync() {
+        documentTask?.cancel()
+        let stream = observeDocumentState(model: model)
+        documentTask = Task { [weak self] in
+            for await snapshot in stream {
                 if Task.isCancelled {
                     break
                 }
-                guard let self else { break }
-                self.applyModelSnapshot(snapshot)
+                guard let self else {
+                    break
+                }
+                guard snapshot == self.currentDocumentObservation else {
+                    continue
+                }
+                self.applyDocumentSnapshot(snapshot)
             }
         }
     }
 
-    private func syncModelFromView(focusOverride: Bool? = nil) {
-        guard let textView, !isApplyingFromModel else { return }
-
-        sourceRevision &+= 1
-        lastViewRevision = sourceRevision
-
-        let currentText = textView.string
-        if model.text != currentText {
-            model.text = currentText
-        }
-
-        let selectedRange = textView.selectedRange()
-        let selection = TextSelection(location: selectedRange.location, length: selectedRange.length)
-        if model.selection != selection {
-            model.selection = selection
-        }
-
-        let focused = focusOverride ?? (textView.window?.firstResponder === textView)
-        if model.isFocused != focused {
-            model.isFocused = focused
-        }
-        syncUndoAvailabilityFromView(textView)
-        onViewStateChanged?()
-    }
-
-    private func applyModelSnapshot(_ snapshot: EditorSnapshot) {
+    private func applyDocumentSnapshot(_ snapshot: EditorDocumentObservation) {
         guard let textView else { return }
 
-        sourceRevision &+= 1
-        lastModelRevision = sourceRevision
-
-        isApplyingFromModel = true
-        defer { isApplyingFromModel = false }
+        isApplyingFromDocument = true
+        defer { isApplyingFromDocument = false }
 
         applyLanguageIfNeeded(snapshot.language)
         applyThemeIfNeeded(snapshot.theme)
@@ -402,15 +408,38 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
             textView.isEditable = snapshot.isEditable
         }
 
+        let isFocused = textView.window?.firstResponder === textView
         if snapshot.isFocused {
-            if textView.window?.firstResponder !== textView {
-                textView.window?.makeFirstResponder(textView)
+            if !isFocused {
+                _ = textView.window?.makeFirstResponder(textView)
             }
-        } else if textView.window?.firstResponder === textView {
-            textView.window?.makeFirstResponder(nil)
+        } else if isFocused {
+            _ = textView.window?.makeFirstResponder(nil)
         }
-        syncUndoAvailabilityFromView(textView)
-        onViewStateChanged?()
+
+        syncRuntimeStateFromView(textView)
+    }
+
+    private func syncRuntimeStateFromView(_ textView: NSTextView, focusOverride: Bool? = nil) {
+        let focused = focusOverride ?? (textView.window?.firstResponder === textView)
+        if model.isFocused != focused {
+            model.isFocused = focused
+        }
+
+        let canUndo = textView.undoManager?.canUndo ?? false
+        if model.isUndoable != canUndo {
+            model.isUndoable = canUndo
+        }
+
+        let canRedo = textView.undoManager?.canRedo ?? false
+        if model.isRedoable != canRedo {
+            model.isRedoable = canRedo
+        }
+
+        let hasText = !textView.string.isEmpty
+        if model.hasText != hasText {
+            model.hasText = hasText
+        }
     }
 
     private func applyLanguageIfNeeded(_ language: EditorLanguage) {
@@ -424,18 +453,6 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         guard force || themeName != appliedThemeName else { return }
         engine.setThemeName(themeName)
         appliedThemeName = themeName
-    }
-
-    private func syncUndoAvailabilityFromView(_ textView: NSTextView) {
-        let canUndo = textView.undoManager?.canUndo ?? false
-        if model.isUndoable != canUndo {
-            model.isUndoable = canUndo
-        }
-
-        let canRedo = textView.undoManager?.canRedo ?? false
-        if model.isRedoable != canRedo {
-            model.isRedoable = canRedo
-        }
     }
 
     private static func clampedSelection(_ selection: TextSelection, text: String) -> TextSelection {

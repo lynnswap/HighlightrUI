@@ -5,6 +5,8 @@ import UIKit
 @MainActor
 public final class HighlightrEditorViewController: UIViewController {
     public let editorView: HighlightrEditorView
+    public var model: HighlightrEditorModel { editorView.model }
+
     private let commandExecutor: EditorCommandExecutor
     private let configuration: HighlightrEditorViewControllerConfiguration
     private var toolbarUndoItem: UIBarButtonItem?
@@ -14,6 +16,7 @@ public final class HighlightrEditorViewController: UIViewController {
     private var toolbarFlexibleSpaceItem: UIBarButtonItem?
     private var toolbarDismissItem: UIBarButtonItem?
     private weak var keyboardToolbar: UIToolbar?
+    private var toolbarStateSyncTask: Task<Void, Never>?
 
     public convenience init(
         model: HighlightrEditorModel,
@@ -40,14 +43,17 @@ public final class HighlightrEditorViewController: UIViewController {
         self.editorView.setAutoIndentOnNewline(configuration.autoIndentOnNewline)
     }
 
+    isolated deinit {
+        toolbarStateSyncTask?.cancel()
+        toolbarStateSyncTask = nil
+    }
+
     public override func viewDidLoad() {
         super.viewDidLoad()
         editorView.setInputAccessoryView(makeKeyboardToolbar())
-        editorView.setViewStateChangeHandler { [weak self] in
-            self?.updateToolbarCommandAvailability()
-        }
+        startToolbarStateSync()
         registerSizeClassChanges()
-        updateToolbarCommandAvailability()
+        applyToolbarCommandAvailability(currentCommandObservation)
     }
 
     @available(*, unavailable)
@@ -61,7 +67,6 @@ public final class HighlightrEditorViewController: UIViewController {
 
     public func perform(_ command: HighlightrEditorCommand) {
         commandExecutor.perform(command)
-        updateToolbarCommandAvailability()
     }
 
     public func canPerform(_ command: HighlightrEditorCommand) -> Bool {
@@ -192,18 +197,38 @@ public final class HighlightrEditorViewController: UIViewController {
         )
     }
 
-    private func updateToolbarCommandAvailability() {
-        toolbarUndoItem?.isEnabled = canPerform(.undo)
-        toolbarRedoItem?.isEnabled = canPerform(.redo)
-        toolbarPairsMenuItem?.isEnabled = canPerform(.insertPair(.parentheses))
-        toolbarEditMenuItem?.isEnabled = canPerform(.deleteCurrentLine) || canPerform(.clearText)
-        toolbarDismissItem?.isEnabled = canPerform(.dismissKeyboard)
+    private var currentCommandObservation: EditorCommandObservation {
+        EditorCommandObservation(model: model)
+    }
+
+    private func startToolbarStateSync() {
+        toolbarStateSyncTask?.cancel()
+        let stream = observeCommandInputs(model: model)
+        toolbarStateSyncTask = Task { [weak self] in
+            for await observation in stream {
+                if Task.isCancelled {
+                    break
+                }
+                guard let self else {
+                    break
+                }
+                self.applyToolbarCommandAvailability(observation)
+            }
+        }
+    }
+
+    private func applyToolbarCommandAvailability(_ observation: EditorCommandObservation) {
+        toolbarUndoItem?.isEnabled = observation.isEditable && observation.isUndoable
+        toolbarRedoItem?.isEnabled = observation.isEditable && observation.isRedoable
+        toolbarPairsMenuItem?.isEnabled = observation.isEditable
+        toolbarEditMenuItem?.isEnabled = observation.isEditable && observation.hasText
+        toolbarDismissItem?.isEnabled = observation.isFocused
         refreshToolbarLayoutIfNeeded()
     }
 
     private func registerSizeClassChanges() {
         _ = registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _) in
-            controller.updateToolbarCommandAvailability()
+            controller.applyToolbarCommandAvailability(controller.currentCommandObservation)
         }
     }
 

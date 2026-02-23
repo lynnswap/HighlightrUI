@@ -23,28 +23,9 @@ struct ValueTypesTests {
     }
 
     @Test
-    func editorSnapshotEqualityAndHashable() {
-        let lhs = EditorSnapshot(
-            text: "a",
-            language: "swift",
-            theme: .named("github"),
-            selection: TextSelection(location: 1, length: 1),
-            isEditable: true,
-            isFocused: false,
-            isUndoable: false,
-            isRedoable: false
-        )
-
-        let rhs = EditorSnapshot(
-            text: "a",
-            language: "swift",
-            theme: .named("github"),
-            selection: TextSelection(location: 1, length: 1),
-            isEditable: true,
-            isFocused: false,
-            isUndoable: false,
-            isRedoable: false
-        )
+    func editorThemeEqualityAndHashable() {
+        let lhs = EditorTheme.automatic(light: "paraiso-light", dark: "paraiso-dark")
+        let rhs = EditorTheme.automatic(light: "paraiso-light", dark: "paraiso-dark")
 
         #expect(lhs == rhs)
         #expect(Set([lhs, rhs]).count == 1)

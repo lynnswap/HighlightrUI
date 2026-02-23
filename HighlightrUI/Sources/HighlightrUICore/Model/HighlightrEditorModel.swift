@@ -1,6 +1,5 @@
 import Foundation
 import Observation
-import ObservationsCompat
 
 @MainActor
 @Observable
@@ -13,57 +12,26 @@ public final class HighlightrEditorModel {
     public var isFocused: Bool
     public var isUndoable: Bool
     public var isRedoable: Bool
+    public var hasText: Bool
 
     public init(
         text: String = "",
         language: EditorLanguage,
         theme: EditorTheme = .automatic(light: "paraiso-light", dark: "paraiso-dark"),
-        isEditable: Bool = true
+        isEditable: Bool = true,
+        isFocused: Bool = false,
+        isUndoable: Bool = false,
+        isRedoable: Bool = false,
+        hasText: Bool? = nil
     ) {
         self.text = text
         self.language = language
         self.theme = theme
         self.selection = .zero
         self.isEditable = isEditable
-        self.isFocused = false
-        self.isUndoable = false
-        self.isRedoable = false
-    }
-
-    public func snapshot() -> EditorSnapshot {
-        EditorSnapshot(
-            text: text,
-            language: language,
-            theme: theme,
-            selection: selection,
-            isEditable: isEditable,
-            isFocused: isFocused,
-            isUndoable: isUndoable,
-            isRedoable: isRedoable
-        )
-    }
-
-    public func snapshotStream(
-        backend: ObservationsCompatBackend = .automatic
-    ) -> ObservationsCompatStream<EditorSnapshot> {
-        makeObservationsCompatStream(backend: backend) {
-            self.snapshot()
-        }
-    }
-
-    public func textStream(
-        backend: ObservationsCompatBackend = .automatic
-    ) -> ObservationsCompatStream<String> {
-        makeObservationsCompatStream(backend: backend) {
-            self.text
-        }
-    }
-
-    public func themeStream(
-        backend: ObservationsCompatBackend = .automatic
-    ) -> ObservationsCompatStream<EditorTheme> {
-        makeObservationsCompatStream(backend: backend) {
-            self.theme
-        }
+        self.isFocused = isFocused
+        self.isUndoable = isUndoable
+        self.isRedoable = isRedoable
+        self.hasText = hasText ?? !text.isEmpty
     }
 }

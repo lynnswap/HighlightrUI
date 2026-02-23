@@ -4,25 +4,33 @@ This guide summarizes breaking changes introduced in HighlightrUI v2.
 
 ## Overview
 
-- SwiftUI-first APIs were removed.
-- UIKit/AppKit-first APIs were introduced.
-- State management was unified into `@Observable` model types.
+- `HighlightrEditorModel` remains the single public editor state model.
+- Public stream APIs are removed; state is consumed via `@Observable` properties.
+- `setViewStateChangeHandler` / `onViewStateChanged` are removed.
+- Internal sync is driven by `ObservationsCompat` over `@Observable` model changes.
 
 ## API Mapping
 
-- `HighlightrTextView` -> `HighlightrEditorView`
-- `HighlightrTextViewModel` -> `HighlightrEditorModel`
-- `HighlightrJSConsoleView` -> removed (out of v2 core scope)
-- SwiftUI modifiers (`theme`, toolbar modifiers, accessory modifiers) -> removed
-- No external replacement API is provided for the iOS accessory view; use the fixed keyboard toolbar built into `HighlightrEditorViewController`.
+- `HighlightrEditorView(model: ...)` -> `HighlightrEditorView(model: ...)`
+- `HighlightrEditorViewController(model: ...)` -> `HighlightrEditorViewController(model: ...)`
 
-## Platform and Toolchain
+## `HighlightrEditorModel` State
 
-- Swift: `6.2`
-- iOS: `18.0+`
-- macOS: `15.0+`
+- Document state: `text`, `language`, `theme`, `selection`, `isEditable`
+- Runtime state: `isFocused`, `isUndoable`, `isRedoable`, `hasText`
+
+## Removed APIs
+
+- Public snapshot/stream APIs:
+  - `snapshot()`
+  - `snapshotStream(...)`
+  - `textStream(...)`
+  - `themeStream(...)`
+- `EditorSnapshot` / `EditorDocumentSnapshot` (public)
+- `setViewStateChangeHandler` / `onViewStateChanged`
+- `HighlightrEditorCommandAvailability`
 
 ## Notes
 
-- v2 does not provide a compatibility layer for the removed SwiftUI APIs.
-- For observation streams, use `ObservationsCompat`-backed APIs exposed by `HighlightrEditorModel`.
+- v2 does not provide a compatibility wrapper for removed APIs.
+- App code should read/write `HighlightrEditorModel` properties directly.

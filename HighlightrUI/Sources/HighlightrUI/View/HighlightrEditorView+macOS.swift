@@ -31,7 +31,9 @@ public final class HighlightrEditorView: NSView {
         let layoutManager = NSLayoutManager()
         textStorage.addLayoutManager(layoutManager)
 
-        let textContainer = NSTextContainer(containerSize: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
+        let textContainer = NSTextContainer(
+            containerSize: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        )
         textContainer.widthTracksTextView = configuration.lineWrappingEnabled
         layoutManager.addTextContainer(textContainer)
 
@@ -68,12 +70,12 @@ public final class HighlightrEditorView: NSView {
 
     public func focus() {
         _ = window?.makeFirstResponder(platformTextView)
-        model.isFocused = window?.firstResponder === platformTextView
+        coordinator.syncStateFromView(focusOverride: window?.firstResponder === platformTextView)
     }
 
     public func blur() {
         _ = window?.makeFirstResponder(nil)
-        model.isFocused = window?.firstResponder === platformTextView
+        coordinator.syncStateFromView(focusOverride: window?.firstResponder === platformTextView)
     }
 
     func setAutoIndentOnNewline(_ enabled: Bool) {

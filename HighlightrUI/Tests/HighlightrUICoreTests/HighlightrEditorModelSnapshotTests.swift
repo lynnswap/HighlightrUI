@@ -2,9 +2,9 @@ import Testing
 @testable import HighlightrUICore
 
 @MainActor
-struct HighlightrEditorModelSnapshotTests {
+struct HighlightrEditorModelMutationTests {
     @Test
-    func snapshotReflectsAllFields() {
+    func documentModelFieldsCanBeUpdated() {
         let model = HighlightrEditorModel(text: "start", language: "swift")
 
         model.text = "updated"
@@ -12,19 +12,26 @@ struct HighlightrEditorModelSnapshotTests {
         model.theme = .named("atom-one-dark")
         model.selection = TextSelection(location: 2, length: 3)
         model.isEditable = false
+
+        #expect(model.text == "updated")
+        #expect(model.language == "javascript")
+        #expect(model.theme == .named("atom-one-dark"))
+        #expect(model.selection == TextSelection(location: 2, length: 3))
+        #expect(!model.isEditable)
+    }
+
+    @Test
+    func runtimeModelFieldsCanBeUpdated() {
+        let model = HighlightrEditorModel(language: "swift")
+
         model.isFocused = true
         model.isUndoable = true
         model.isRedoable = true
+        model.hasText = true
 
-        let snapshot = model.snapshot()
-
-        #expect(snapshot.text == "updated")
-        #expect(snapshot.language == "javascript")
-        #expect(snapshot.theme == .named("atom-one-dark"))
-        #expect(snapshot.selection == TextSelection(location: 2, length: 3))
-        #expect(!snapshot.isEditable)
-        #expect(snapshot.isFocused)
-        #expect(snapshot.isUndoable)
-        #expect(snapshot.isRedoable)
+        #expect(model.isFocused)
+        #expect(model.isUndoable)
+        #expect(model.isRedoable)
+        #expect(model.hasText)
     }
 }
