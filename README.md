@@ -53,9 +53,45 @@ Task {
 }
 ```
 
+## Testing
+
+Run tests with `xcodebuild` from the repository root.
+
+```bash
+# macOS: Package tests (Core)
+xcodebuild -workspace HighlightrUI.xcworkspace \
+  -scheme HighlightrUICoreTests \
+  -destination 'platform=macOS' \
+  test
+
+# macOS: Package tests (UI)
+xcodebuild -workspace HighlightrUI.xcworkspace \
+  -scheme HighlightrUITests \
+  -destination 'platform=macOS' \
+  test
+
+# iOS Simulator: Package tests (Core)
+xcodebuild -workspace HighlightrUI.xcworkspace \
+  -scheme HighlightrUICoreTests \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+  test
+
+# iOS Simulator: Package tests (UI)
+xcodebuild -workspace HighlightrUI.xcworkspace \
+  -scheme HighlightrUITests \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+  test
+```
+
+If the destination does not exist on your machine, check available simulators with:
+
+```bash
+xcrun simctl list devices available
+```
+
 ## Migration
 
-See [`Migration`](Docs/Migration.md).
+See [`Migration`](HighlightrUI/Docs/Migration.md).
 
 ## License
 
