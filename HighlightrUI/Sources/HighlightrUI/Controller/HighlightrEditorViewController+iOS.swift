@@ -17,6 +17,7 @@ public final class HighlightrEditorViewController: UIViewController {
     private var toolbarDismissItem: UIBarButtonItem?
     private weak var keyboardToolbar: UIToolbar?
     private var toolbarStateSyncTask: Task<Void, Never>?
+    private var sizeClassTraitRegistration: UITraitChangeRegistration?
 
     public convenience init(
         model: HighlightrEditorModel,
@@ -227,7 +228,7 @@ public final class HighlightrEditorViewController: UIViewController {
     }
 
     private func registerSizeClassChanges() {
-        _ = registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _) in
+        sizeClassTraitRegistration = registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: Self, _) in
             controller.applyToolbarCommandAvailability(controller.currentCommandObservation)
         }
     }

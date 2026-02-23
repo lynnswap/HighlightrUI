@@ -20,6 +20,7 @@ public final class HighlightrEditorView: UIView {
     let engine: any SyntaxHighlightingEngine
     let coordinator: EditorCoordinator
     let platformTextView: PlatformEditorTextView
+    private var styleTraitRegistration: UITraitChangeRegistration?
 
     public init(
         model: HighlightrEditorModel,
@@ -142,7 +143,7 @@ public final class HighlightrEditorView: UIView {
     }
 
     private func registerTraitChanges() {
-        _ = registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: Self, _) in
+        styleTraitRegistration = registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: Self, _) in
             view.coordinator.applyAppearance(
                 colorScheme: editorColorScheme(from: view.traitCollection.userInterfaceStyle)
             )
