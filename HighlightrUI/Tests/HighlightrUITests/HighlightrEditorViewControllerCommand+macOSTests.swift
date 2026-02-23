@@ -209,5 +209,86 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(model.text == "")
         #expect(textView.string == "")
     }
+
+    @Test
+    func insertIndentUsesLatestModelTextBeforeViewSync() async {
+        let model = HighlightrEditorModel(text: "old", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadView()
+        let textView = controller.editorView.platformTextView
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        #expect(textView.string == "old")
+
+        model.text = "new"
+        #expect(textView.string == "old")
+
+        controller.perform(.insertIndent)
+        await AsyncDrain.firstTurn()
+
+        #expect(model.text == "    new")
+        #expect(textView.string == "    new")
+    }
+
+    @Test
+    func undoUsesLatestModelTextBeforeViewSync() async {
+        let model = HighlightrEditorModel(text: "old", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadView()
+        let textView = controller.editorView.platformTextView
+        textView.undoManager?.groupsByEvent = false
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+
+        controller.perform(.insertIndent)
+        await AsyncDrain.firstTurn()
+        #expect(model.text == "    old")
+        #expect(controller.canPerform(.undo))
+
+        model.text = "new"
+        #expect(textView.string == "    old")
+
+        controller.perform(.undo)
+        await AsyncDrain.firstTurn()
+
+        #expect(model.text == "new")
+        #expect(textView.string == "new")
+    }
+
+    @Test
+    func redoUsesLatestModelTextBeforeViewSync() async {
+        let model = HighlightrEditorModel(text: "old", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadView()
+        let textView = controller.editorView.platformTextView
+        textView.undoManager?.groupsByEvent = false
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+
+        controller.perform(.insertIndent)
+        await AsyncDrain.firstTurn()
+        controller.perform(.undo)
+        await AsyncDrain.firstTurn()
+        #expect(model.text == "old")
+        #expect(controller.canPerform(.redo))
+
+        model.text = "new"
+        #expect(textView.string == "old")
+
+        controller.perform(.redo)
+        await AsyncDrain.firstTurn()
+
+        #expect(model.text == "new")
+        #expect(textView.string == "new")
+    }
 }
 #endif

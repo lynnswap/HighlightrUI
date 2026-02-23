@@ -48,10 +48,12 @@ final class EditorCommandExecutor {
         case .blur, .dismissKeyboard:
             editorView.blur()
         case .undo:
+            syncViewFromModelIfNeeded()
             guard canPerform(.undo) else { return }
             textView.undoManager?.undo()
             editorView.coordinator.syncStateFromView()
         case .redo:
+            syncViewFromModelIfNeeded()
             guard canPerform(.redo) else { return }
             textView.undoManager?.redo()
             editorView.coordinator.syncStateFromView()
@@ -70,6 +72,7 @@ final class EditorCommandExecutor {
 
     private func insertIndent() {
         guard canPerform(.insertIndent) else { return }
+        syncViewFromModelIfNeeded()
         let selection = clampedSelection(textView.selectedRange())
         replaceText(
             in: selection,
@@ -80,6 +83,7 @@ final class EditorCommandExecutor {
 
     private func insertCurlyBraces() {
         guard canPerform(.insertCurlyBraces) else { return }
+        syncViewFromModelIfNeeded()
         let selection = clampedSelection(textView.selectedRange())
         let text = textView.string
         let source = text as NSString
@@ -108,6 +112,7 @@ final class EditorCommandExecutor {
 
     private func insertPair(_ kind: HighlightrEditorPairKind) {
         guard canPerform(.insertPair(kind)) else { return }
+        syncViewFromModelIfNeeded()
         let (open, close) = pairCharacters(for: kind)
         let selection = clampedSelection(textView.selectedRange())
         let source = textView.string as NSString
