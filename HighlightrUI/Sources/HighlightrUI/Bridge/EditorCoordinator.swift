@@ -161,8 +161,10 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         applyLanguageIfNeeded(snapshot.language)
         applyThemeIfNeeded(snapshot.theme)
 
-        if textView.text != snapshot.text {
+        let shouldResetUndoHistory = textView.text != snapshot.text
+        if shouldResetUndoHistory {
             textView.text = snapshot.text
+            textView.undoManager?.removeAllActions()
         }
 
         let clampedSelection = Self.clampedSelection(snapshot.selection, text: textView.text ?? "")
@@ -408,8 +410,10 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         applyLanguageIfNeeded(snapshot.language)
         applyThemeIfNeeded(snapshot.theme)
 
-        if textView.string != snapshot.text {
+        let shouldResetUndoHistory = textView.string != snapshot.text
+        if shouldResetUndoHistory {
             textView.string = snapshot.text
+            textView.undoManager?.removeAllActions()
         }
 
         let clampedSelection = Self.clampedSelection(snapshot.selection, text: textView.string)

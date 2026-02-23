@@ -267,12 +267,19 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         )
 
         controller.loadView()
+        let host = WindowHost(view: controller.view)
+        host.pump()
+        controller.perform(.focus)
+        await AsyncDrain.firstTurn()
+        host.pump()
+
         let textView = controller.editorView.platformTextView
         textView.undoManager?.groupsByEvent = false
         textView.setSelectedRange(NSRange(location: 0, length: 0))
 
         controller.perform(.insertIndent)
         await AsyncDrain.firstTurn()
+        host.pump()
         #expect(model.text == "    old")
         #expect(controller.canPerform(.undo))
 
@@ -281,9 +288,12 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
         controller.perform(.undo)
         await AsyncDrain.firstTurn()
+        host.pump()
 
         #expect(model.text == "new")
         #expect(textView.string == "new")
+
+        _ = host
     }
 
     @Test
@@ -295,14 +305,22 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         )
 
         controller.loadView()
+        let host = WindowHost(view: controller.view)
+        host.pump()
+        controller.perform(.focus)
+        await AsyncDrain.firstTurn()
+        host.pump()
+
         let textView = controller.editorView.platformTextView
         textView.undoManager?.groupsByEvent = false
         textView.setSelectedRange(NSRange(location: 0, length: 0))
 
         controller.perform(.insertIndent)
         await AsyncDrain.firstTurn()
+        host.pump()
         controller.perform(.undo)
         await AsyncDrain.firstTurn()
+        host.pump()
         #expect(model.text == "old")
         #expect(controller.canPerform(.redo))
 
@@ -311,9 +329,12 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
         controller.perform(.redo)
         await AsyncDrain.firstTurn()
+        host.pump()
 
         #expect(model.text == "new")
         #expect(textView.string == "new")
+
+        _ = host
     }
 
     @Test
