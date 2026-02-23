@@ -120,11 +120,19 @@ final class EditorCommandExecutor {
         let selection = clampedSelection(textView.selectedRange, in: text)
         let location = min(selection.location, source.length)
         let lineRange = source.lineRange(for: NSRange(location: location, length: 0))
+        let deleteRange: NSRange
+        if lineRange.location == source.length,
+           lineRange.length == 0,
+           let trailingBreakRange = trailingLineBreakRange(in: source) {
+            deleteRange = trailingBreakRange
+        } else {
+            deleteRange = lineRange
+        }
 
         replaceText(
-            in: lineRange,
+            in: deleteRange,
             with: "",
-            selectedRangeAfter: NSRange(location: lineRange.location, length: 0)
+            selectedRangeAfter: NSRange(location: deleteRange.location, length: 0)
         )
     }
 
@@ -230,6 +238,23 @@ final class EditorCommandExecutor {
 
     private func utf16Count(_ text: String) -> Int {
         (text as NSString).length
+    }
+
+    private func trailingLineBreakRange(in source: NSString) -> NSRange? {
+        guard source.length > 0 else { return nil }
+
+        if source.length >= 2 {
+            let lastTwo = source.substring(with: NSRange(location: source.length - 2, length: 2))
+            if lastTwo == "\r\n" {
+                return NSRange(location: source.length - 2, length: 2)
+            }
+        }
+
+        let last = source.substring(with: NSRange(location: source.length - 1, length: 1))
+        if last == "\n" || last == "\r" || last == "\u{2028}" || last == "\u{2029}" {
+            return NSRange(location: source.length - 1, length: 1)
+        }
+        return nil
     }
 
     private func performUndoStep(_ operation: () -> Void) {

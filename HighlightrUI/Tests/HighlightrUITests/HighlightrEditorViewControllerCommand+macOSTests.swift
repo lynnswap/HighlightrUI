@@ -112,5 +112,25 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(model.text == "")
         #expect(!controller.canPerform(.clearText))
     }
+
+    @Test
+    func deleteCurrentLineAtEOFRemovesTrailingBlankLine() async {
+        let model = HighlightrEditorModel(text: "a\n", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadView()
+        let textView = controller.editorView.platformTextView
+        textView.setSelectedRange(NSRange(location: 2, length: 0))
+
+        #expect(controller.canPerform(.deleteCurrentLine))
+        controller.perform(.deleteCurrentLine)
+        await AsyncDrain.firstTurn()
+
+        #expect(model.text == "a")
+        #expect(textView.string == "a")
+    }
 }
 #endif
