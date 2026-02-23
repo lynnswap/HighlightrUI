@@ -119,7 +119,15 @@ public final class HighlightrEditorView: UIView {
         textView.isEditable = model.isEditable
         textView.isScrollEnabled = true
 
-        if !configuration.lineWrappingEnabled {
+        if configuration.lineWrappingEnabled {
+            textView.textContainer.widthTracksTextView = true
+            textView.textContainer.lineBreakMode = .byWordWrapping
+        } else {
+            textView.textContainer.widthTracksTextView = false
+            textView.textContainer.size = CGSize(
+                width: CGFloat.greatestFiniteMagnitude,
+                height: CGFloat.greatestFiniteMagnitude
+            )
             textView.textContainer.lineBreakMode = .byClipping
         }
 
