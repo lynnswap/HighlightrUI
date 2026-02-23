@@ -200,6 +200,30 @@ struct HighlightrEditorViewControllerCommandiOSTests {
         #expect(!controller.canPerform(.clearText))
     }
 
+    @Test
+    func deleteCurrentLineUsesLatestModelTextBeforeViewSync() async {
+        let model = HighlightrEditorModel(text: "old\nline", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadViewIfNeeded()
+        let textView = controller.editorView.platformTextView
+        textView.selectedRange = NSRange(location: 0, length: 0)
+        #expect(textView.text == "old\nline")
+
+        model.text = "new"
+        #expect(textView.text == "old\nline")
+        #expect(controller.canPerform(.deleteCurrentLine))
+
+        controller.perform(.deleteCurrentLine)
+        await AsyncDrain.firstTurn()
+
+        #expect(model.text == "")
+        #expect(textView.text == "")
+    }
+
     private func normalizeQuotes(_ text: String?) -> String? {
         guard let text else { return nil }
         return normalizeQuotes(text)

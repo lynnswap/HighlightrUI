@@ -218,7 +218,7 @@ final class EditorCommandExecutor {
 
     private func syncViewFromModelIfNeeded() {
         let modelText = editorView.model.text
-        guard textView.string.isEmpty, !modelText.isEmpty else {
+        guard textView.string != modelText else {
             return
         }
         editorView.coordinator.syncViewFromModel()
