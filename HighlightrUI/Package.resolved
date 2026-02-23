@@ -1,0 +1,24 @@
+{
+  "originHash" : "6843614ad6a19a903c056e894a10ed925239ba27aea52d1600ec8493edcc8b33",
+  "pins" : [
+    {
+      "identity" : "highlightr",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/raspu/Highlightr",
+      "state" : {
+        "revision" : "05e7fcc63b33925cd0c1faaa205cdd5681e7bbef",
+        "version" : "2.3.0"
+      }
+    },
+    {
+      "identity" : "observationscompat",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lynnswap/ObservationsCompat",
+      "state" : {
+        "revision" : "ef0501508325f27e6eeb6765a79607adc62beaeb",
+        "version" : "0.1.0"
+      }
+    }
+  ],
+  "version" : 3
+}
