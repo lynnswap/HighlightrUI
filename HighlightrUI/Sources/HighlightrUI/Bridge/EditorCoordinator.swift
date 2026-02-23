@@ -185,9 +185,6 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
             }
         } else if textView.isFirstResponder {
             _ = textView.resignFirstResponder()
-            if textView.isFirstResponder {
-                focusOverride = false
-            }
         }
 
         syncRuntimeStateFromView(textView, focusOverride: focusOverride)
@@ -436,9 +433,6 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
             }
         } else if isFocused {
             _ = textView.window?.makeFirstResponder(nil)
-            if textView.window?.firstResponder === textView {
-                focusOverride = false
-            }
         }
 
         syncRuntimeStateFromView(textView, focusOverride: focusOverride)
