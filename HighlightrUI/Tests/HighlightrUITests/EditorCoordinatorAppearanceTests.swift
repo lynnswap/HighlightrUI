@@ -34,7 +34,6 @@ struct EditorCoordinatorAppearanceTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
@@ -52,6 +51,7 @@ struct EditorCoordinatorAppearanceTests {
         model.theme = .named("github")
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -70,7 +70,6 @@ struct EditorCoordinatorAppearanceTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         coordinator.applyAppearance(colorScheme: .dark)
@@ -79,6 +78,7 @@ struct EditorCoordinatorAppearanceTests {
         await AsyncDrain.firstTurn()
 
         #expect(engine.setThemeNameCalls == ["paraiso-light", "paraiso-dark", "paraiso-light"])
+        withExtendedLifetime(coordinator) {}
     }
 }
 
@@ -98,7 +98,6 @@ struct EditorCoordinatorAppearanceTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
@@ -116,6 +115,7 @@ struct EditorCoordinatorAppearanceTests {
         model.theme = .named("github")
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -134,7 +134,6 @@ struct EditorCoordinatorAppearanceTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         coordinator.applyAppearance(colorScheme: .dark)
@@ -143,6 +142,7 @@ struct EditorCoordinatorAppearanceTests {
         await AsyncDrain.firstTurn()
 
         #expect(engine.setThemeNameCalls == ["paraiso-light", "paraiso-dark", "paraiso-light"])
+        withExtendedLifetime(coordinator) {}
     }
 }
 #endif

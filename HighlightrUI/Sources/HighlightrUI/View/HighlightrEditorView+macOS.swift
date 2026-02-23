@@ -61,10 +61,6 @@ public final class HighlightrEditorView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        coordinator.invalidate()
-    }
-
     public override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         coordinator.applyAppearance(colorScheme: editorColorScheme(from: effectiveAppearance))

@@ -73,10 +73,6 @@ public final class HighlightrEditorView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    isolated deinit {
-        coordinator.invalidate()
-    }
-
     public func focus() {
         _ = platformTextView.becomeFirstResponder()
         model.isFocused = platformTextView.isFirstResponder

@@ -41,11 +41,9 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         startSnapshotSync()
     }
 
-    nonisolated func invalidate() {
-        Task { @MainActor [weak self] in
-            self?.snapshotTask?.cancel()
-            self?.snapshotTask = nil
-        }
+    isolated deinit {
+        snapshotTask?.cancel()
+        snapshotTask = nil
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
@@ -111,13 +109,14 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
 
     private func startSnapshotSync() {
         snapshotTask?.cancel()
+        let snapshotStream = model.snapshotStream()
         snapshotTask = Task { [weak self] in
-            guard let self else { return }
-            for await snapshot in model.snapshotStream() {
+            for await snapshot in snapshotStream {
                 if Task.isCancelled {
                     break
                 }
-                applyModelSnapshot(snapshot)
+                guard let self else { break }
+                self.applyModelSnapshot(snapshot)
             }
         }
     }
@@ -284,11 +283,9 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         startSnapshotSync()
     }
 
-    nonisolated func invalidate() {
-        Task { @MainActor [weak self] in
-            self?.snapshotTask?.cancel()
-            self?.snapshotTask = nil
-        }
+    isolated deinit {
+        snapshotTask?.cancel()
+        snapshotTask = nil
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
@@ -342,13 +339,14 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
 
     private func startSnapshotSync() {
         snapshotTask?.cancel()
+        let snapshotStream = model.snapshotStream()
         snapshotTask = Task { [weak self] in
-            guard let self else { return }
-            for await snapshot in model.snapshotStream() {
+            for await snapshot in snapshotStream {
                 if Task.isCancelled {
                     break
                 }
-                applyModelSnapshot(snapshot)
+                guard let self else { break }
+                self.applyModelSnapshot(snapshot)
             }
         }
     }

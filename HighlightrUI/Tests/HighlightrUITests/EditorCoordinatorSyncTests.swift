@@ -20,7 +20,6 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         model.text = "updated"
@@ -30,6 +29,7 @@ struct EditorCoordinatorSyncTests {
 
         #expect(textView.text == "updated")
         #expect(textView.selectedRange == NSRange(location: 1, length: 3))
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -43,7 +43,6 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         textView.text = "abc"
         textView.selectedRange = NSRange(location: 2, length: 1)
@@ -66,13 +65,13 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         model.selection = TextSelection(location: -10, length: 40)
         await AsyncDrain.firstTurn()
         await AsyncDrain.shortDelay()
 
         #expect(textView.selectedRange == NSRange(location: 0, length: 3))
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -86,13 +85,13 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         model.selection = TextSelection(location: 100, length: 20)
         await AsyncDrain.firstTurn()
         await AsyncDrain.shortDelay()
 
         #expect(textView.selectedRange == NSRange(location: 3, length: 0))
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -106,13 +105,13 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         model.isEditable = false
         await AsyncDrain.firstTurn()
         await AsyncDrain.shortDelay()
 
         #expect(textView.isEditable == false)
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -126,7 +125,6 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         #expect(engine.setLanguageCalls == ["swift"])
@@ -140,6 +138,7 @@ struct EditorCoordinatorSyncTests {
             await AsyncDrain.firstTurn()
         }
         #expect(engine.setLanguageCalls == ["swift", "json"])
+        withExtendedLifetime(coordinator) {}
     }
 
 }
@@ -161,7 +160,6 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         model.text = "updated"
@@ -171,6 +169,7 @@ struct EditorCoordinatorSyncTests {
 
         #expect(textView.string == "updated")
         #expect(textView.selectedRange() == NSRange(location: 1, length: 3))
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -184,7 +183,6 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         textView.string = "abc"
         textView.setSelectedRange(NSRange(location: 2, length: 1))
@@ -194,6 +192,7 @@ struct EditorCoordinatorSyncTests {
 
         #expect(model.text == "abc")
         #expect(model.selection == TextSelection(location: 2, length: 1))
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -207,13 +206,13 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         model.selection = TextSelection(location: -10, length: 40)
         await AsyncDrain.firstTurn()
         await AsyncDrain.shortDelay()
 
         #expect(textView.selectedRange() == NSRange(location: 0, length: 3))
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -227,13 +226,13 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         model.selection = TextSelection(location: 100, length: 20)
         await AsyncDrain.firstTurn()
         await AsyncDrain.shortDelay()
 
         #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -247,13 +246,13 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         model.isEditable = false
         await AsyncDrain.firstTurn()
         await AsyncDrain.shortDelay()
 
         #expect(textView.isEditable == false)
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -267,7 +266,6 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         #expect(engine.setLanguageCalls == ["swift"])
@@ -281,6 +279,7 @@ struct EditorCoordinatorSyncTests {
             await AsyncDrain.firstTurn()
         }
         #expect(engine.setLanguageCalls == ["swift", "json"])
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -295,7 +294,6 @@ struct EditorCoordinatorSyncTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         #expect(model.isUndoable == (textView.undoManager?.canUndo ?? false))
@@ -315,6 +313,7 @@ struct EditorCoordinatorSyncTests {
 
         #expect(model.isUndoable == (textView.undoManager?.canUndo ?? false))
         #expect(model.isRedoable == (textView.undoManager?.canRedo ?? false))
+        withExtendedLifetime(coordinator) {}
     }
 }
 #endif
