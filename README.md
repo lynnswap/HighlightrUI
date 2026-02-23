@@ -58,25 +58,13 @@ Task {
 Run tests with `xcodebuild` from the repository root.
 
 ```bash
-# macOS: Package tests (Core)
-xcodebuild -workspace HighlightrUI.xcworkspace \
-  -scheme HighlightrUICoreTests \
-  -destination 'platform=macOS' \
-  test
-
-# macOS: Package tests (UI)
+# macOS: Package tests
 xcodebuild -workspace HighlightrUI.xcworkspace \
   -scheme HighlightrUITests \
   -destination 'platform=macOS' \
   test
 
-# iOS Simulator: Package tests (Core)
-xcodebuild -workspace HighlightrUI.xcworkspace \
-  -scheme HighlightrUICoreTests \
-  -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
-  test
-
-# iOS Simulator: Package tests (UI)
+# iOS Simulator: Package tests
 xcodebuild -workspace HighlightrUI.xcworkspace \
   -scheme HighlightrUITests \
   -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \

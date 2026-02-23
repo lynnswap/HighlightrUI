@@ -16,14 +16,19 @@ struct EditorSettingsSheet: View {
                             Text(snippet.title).tag(snippet)
                         }
                     }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("settings.samplePicker")
 
                     Picker("Language", selection: $model.language) {
                         ForEach(DemoLanguage.allCases) { language in
                             Text(language.title).tag(language.editorLanguage)
                         }
                     }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("settings.languagePicker")
 
                     Toggle("Editable", isOn: $model.isEditable)
+                        .accessibilityIdentifier("settings.editableToggle")
                 }
 
                 Section("Appearance") {
@@ -32,14 +37,18 @@ struct EditorSettingsSheet: View {
                             Text(theme.title).tag(theme.editorTheme)
                         }
                     }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("settings.themePicker")
                 }
             }
+            .accessibilityIdentifier("settings.form")
             .navigationTitle("Editor Settings")
             .toolbar {
                 ToolbarItem {
                     Button("Done") {
                         dismiss()
                     }
+                    .accessibilityIdentifier("settings.doneButton")
                 }
             }
         }

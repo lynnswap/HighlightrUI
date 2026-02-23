@@ -45,20 +45,17 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "HighlightrUICoreTests",
+            name: "HighlightrUITests",
             dependencies: [
                 "HighlightrUICore",
+                "HighlightrUI",
                 .product(name: "ObservationsCompat", package: "ObservationsCompat"),
             ],
-            path: "Tests/HighlightrUICoreTests",
-            swiftSettings: [
-                .swiftLanguageMode(.v6),
-            ]
-        ),
-        .testTarget(
-            name: "HighlightrUITests",
-            dependencies: ["HighlightrUI"],
-            path: "Tests/HighlightrUITests",
+            path: "Tests",
+            sources: [
+                "HighlightrUICoreTests",
+                "HighlightrUITests",
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
             ]

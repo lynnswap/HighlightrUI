@@ -25,17 +25,20 @@ struct ContentView: View {
                         Rectangle().fill(.ultraThinMaterial)
                             .clipShape(.rect(cornerRadius: 8))
                     }
+                    .accessibilityIdentifier("editor.host")
 
                 HStack {
                     Label(
                         DemoLanguage.title(for: model.language),
                         systemImage: "curlybraces"
                     )
+                    .accessibilityIdentifier("status.language")
                     Spacer()
                     Label(
                         model.isEditable ? "Editable" : "Read Only",
                         systemImage: model.isEditable ? "pencil" : "lock"
                     )
+                    .accessibilityIdentifier("status.editable")
                 }
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -53,6 +56,7 @@ struct ContentView: View {
                     }label:{
                         Text(selectedSnippet.title)
                     }
+                    .accessibilityIdentifier("toolbar.snippetMenu")
                 }
 
                 ToolbarItem(placement:.primaryAction) {
@@ -61,6 +65,7 @@ struct ContentView: View {
                     } label: {
                         Label("Settings", systemImage: "gear")
                     }
+                    .accessibilityIdentifier("toolbar.settingsButton")
                 }
             }
         }
