@@ -26,6 +26,7 @@ struct EditorCoordinatorSyncTests {
         model.text = "updated"
         model.selection = TextSelection(location: 1, length: 3)
         await AsyncDrain.firstTurn()
+        await AsyncDrain.shortDelay()
 
         #expect(textView.text == "updated")
         #expect(textView.selectedRange == NSRange(location: 1, length: 3))
@@ -107,6 +108,7 @@ struct EditorCoordinatorSyncTests {
 
         model.isEditable = false
         await AsyncDrain.firstTurn()
+        await AsyncDrain.shortDelay()
 
         #expect(textView.isEditable == false)
     }
@@ -160,6 +162,7 @@ struct EditorCoordinatorSyncTests {
         model.text = "updated"
         model.selection = TextSelection(location: 1, length: 3)
         await AsyncDrain.firstTurn()
+        await AsyncDrain.shortDelay()
 
         #expect(textView.string == "updated")
         #expect(textView.selectedRange() == NSRange(location: 1, length: 3))
@@ -241,6 +244,7 @@ struct EditorCoordinatorSyncTests {
 
         model.isEditable = false
         await AsyncDrain.firstTurn()
+        await AsyncDrain.shortDelay()
 
         #expect(textView.isEditable == false)
     }
