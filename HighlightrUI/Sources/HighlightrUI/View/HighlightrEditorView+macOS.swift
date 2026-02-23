@@ -75,7 +75,7 @@ public final class HighlightrEditorView: NSView {
 
     public func focus() {
         _ = window?.makeFirstResponder(platformTextView)
-        coordinator.syncStateFromView(focusOverride: window?.firstResponder === platformTextView)
+        coordinator.syncStateFromView(focusOverride: true)
     }
 
     public func blur() {

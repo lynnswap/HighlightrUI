@@ -223,7 +223,16 @@ final class EditorCommandExecutor {
 
     private func syncViewFromModelIfNeeded() {
         let modelText = editorView.model.text
-        guard textView.string != modelText else {
+        let modelSelection = clampedSelection(
+            NSRange(
+                location: editorView.model.selection.location,
+                length: editorView.model.selection.length
+            ),
+            in: modelText
+        )
+        let viewSelection = clampedSelection(textView.selectedRange(), in: modelText)
+
+        guard textView.string != modelText || viewSelection != modelSelection else {
             return
         }
         editorView.coordinator.syncViewFromModel()

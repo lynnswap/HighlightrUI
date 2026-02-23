@@ -248,6 +248,31 @@ struct HighlightrEditorViewControllerCommandiOSTests {
     }
 
     @Test
+    func insertIndentUsesLatestModelSelectionBeforeViewSync() async {
+        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadViewIfNeeded()
+        let textView = controller.editorView.platformTextView
+        textView.selectedRange = NSRange(location: 0, length: 0)
+        #expect(textView.selectedRange == NSRange(location: 0, length: 0))
+
+        model.selection = TextSelection(location: 3, length: 0)
+        #expect(textView.selectedRange == NSRange(location: 0, length: 0))
+
+        controller.perform(.insertIndent)
+        await AsyncDrain.firstTurn()
+
+        #expect(model.text == "abc    ")
+        #expect(textView.text == "abc    ")
+        #expect(model.selection == TextSelection(location: 7, length: 0))
+        #expect(textView.selectedRange == NSRange(location: 7, length: 0))
+    }
+
+    @Test
     func undoUsesLatestModelTextBeforeViewSync() async {
         let model = HighlightrEditorModel(text: "old", language: "swift")
         let controller = HighlightrEditorViewController(
@@ -303,6 +328,37 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
         #expect(model.text == "new")
         #expect(textView.text == "new")
+    }
+
+    @Test
+    func focusCommandBeforeWindowAttachPreservesPendingFocusRequest() async {
+        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadViewIfNeeded()
+        #expect(model.isFocused == false)
+        #expect(controller.editorView.platformTextView.isFirstResponder == false)
+
+        controller.perform(.focus)
+        await AsyncDrain.firstTurn()
+
+        #expect(model.isFocused == true)
+        #expect(controller.editorView.platformTextView.isFirstResponder == false)
+        #expect(!controller.canPerform(.focus))
+        #expect(controller.canPerform(.blur))
+
+        let host = WindowHost(view: controller.view)
+        host.pump()
+        await AsyncDrain.firstTurn()
+        host.pump()
+
+        #expect(model.isFocused == true)
+        #expect(controller.editorView.platformTextView.isFirstResponder == true)
+
+        _ = host
     }
 
     private func normalizeQuotes(_ text: String?) -> String? {

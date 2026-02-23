@@ -80,7 +80,7 @@ public final class HighlightrEditorView: UIView {
 
     public func focus() {
         _ = platformTextView.becomeFirstResponder()
-        coordinator.syncStateFromView(focusOverride: platformTextView.isFirstResponder)
+        coordinator.syncStateFromView(focusOverride: true)
     }
 
     public func blur() {
