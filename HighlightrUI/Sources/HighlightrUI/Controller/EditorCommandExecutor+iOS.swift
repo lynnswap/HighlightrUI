@@ -35,9 +35,9 @@ final class EditorCommandExecutor {
         case .insertPair:
             return model.isEditable
         case .deleteCurrentLine:
-            return model.isEditable && model.hasText
+            return model.isEditable && hasCurrentDocumentText
         case .clearText:
-            return model.isEditable && model.hasText
+            return model.isEditable && hasCurrentDocumentText
         }
     }
 
@@ -131,7 +131,8 @@ final class EditorCommandExecutor {
 
     private func deleteCurrentLine() {
         guard canPerform(.deleteCurrentLine) else { return }
-        let text = textView.text ?? ""
+        syncViewFromModelIfNeeded()
+        let text = textViewText
         guard !text.isEmpty else { return }
 
         let source = text as NSString
@@ -156,7 +157,8 @@ final class EditorCommandExecutor {
 
     private func clearText() {
         guard canPerform(.clearText) else { return }
-        let text = textView.text ?? ""
+        syncViewFromModelIfNeeded()
+        let text = textViewText
         let allRange = NSRange(location: 0, length: utf16Count(text))
         replaceText(in: allRange, with: "", selectedRangeAfter: NSRange(location: 0, length: 0))
     }
@@ -228,6 +230,22 @@ final class EditorCommandExecutor {
 
     private func utf16Count(_ text: String) -> Int {
         (text as NSString).length
+    }
+
+    private var textViewText: String {
+        textView.text ?? ""
+    }
+
+    private var hasCurrentDocumentText: Bool {
+        !textViewText.isEmpty || !editorView.model.text.isEmpty
+    }
+
+    private func syncViewFromModelIfNeeded() {
+        let modelText = editorView.model.text
+        guard textViewText.isEmpty, !modelText.isEmpty else {
+            return
+        }
+        editorView.coordinator.syncViewFromModel()
     }
 
     private func trailingLineBreakRange(in source: NSString) -> NSRange? {

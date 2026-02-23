@@ -152,5 +152,38 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(model.text == "a")
         #expect(textView.string == "a")
     }
+
+    @Test
+    func clearAndDeleteCommandsRemainAvailableBeforeViewSync() async {
+        let model = HighlightrEditorModel(text: "", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadView()
+        let textView = controller.editorView.platformTextView
+        #expect(textView.string == "")
+        #expect(!controller.canPerform(.clearText))
+        #expect(!controller.canPerform(.deleteCurrentLine))
+
+        model.text = "line"
+        #expect(textView.string == "")
+        #expect(controller.canPerform(.clearText))
+        #expect(controller.canPerform(.deleteCurrentLine))
+
+        controller.perform(.deleteCurrentLine)
+        await AsyncDrain.firstTurn()
+        #expect(model.text == "")
+        #expect(textView.string == "")
+
+        model.text = "line"
+        #expect(controller.canPerform(.clearText))
+        controller.perform(.clearText)
+        await AsyncDrain.firstTurn()
+        #expect(model.text == "")
+        #expect(textView.string == "")
+        #expect(!controller.canPerform(.clearText))
+    }
 }
 #endif

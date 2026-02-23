@@ -33,7 +33,7 @@ struct EditorCommandObservation: Equatable {
         isFocused = model.isFocused
         isUndoable = model.isUndoable
         isRedoable = model.isRedoable
-        hasText = model.hasText
+        hasText = !model.text.isEmpty
     }
 }
 

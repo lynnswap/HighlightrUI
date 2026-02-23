@@ -72,6 +72,10 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         syncRuntimeStateFromView(textView, focusOverride: focusOverride)
     }
 
+    func syncViewFromModel() {
+        applyDocumentSnapshot(currentDocumentObservation)
+    }
+
     func textViewDidChange(_ textView: UITextView) {
         syncStateFromView()
     }
@@ -320,6 +324,10 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         }
 
         syncRuntimeStateFromView(textView, focusOverride: focusOverride)
+    }
+
+    func syncViewFromModel() {
+        applyDocumentSnapshot(currentDocumentObservation)
     }
 
     func textDidChange(_ notification: Notification) {
