@@ -31,7 +31,9 @@ public final class HighlightrEditorView: NSView {
         let layoutManager = NSLayoutManager()
         textStorage.addLayoutManager(layoutManager)
 
-        let textContainer = NSTextContainer(containerSize: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
+        let textContainer = NSTextContainer(
+            containerSize: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        )
         textContainer.widthTracksTextView = configuration.lineWrappingEnabled
         layoutManager.addTextContainer(textContainer)
 
@@ -61,8 +63,9 @@ public final class HighlightrEditorView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        coordinator.invalidate()
+    public override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        coordinator.syncViewFromModel()
     }
 
     public override func viewDidChangeEffectiveAppearance() {
@@ -72,12 +75,16 @@ public final class HighlightrEditorView: NSView {
 
     public func focus() {
         _ = window?.makeFirstResponder(platformTextView)
-        model.isFocused = window?.firstResponder === platformTextView
+        coordinator.syncStateFromView(focusOverride: true)
     }
 
     public func blur() {
         _ = window?.makeFirstResponder(nil)
-        model.isFocused = window?.firstResponder === platformTextView
+        coordinator.syncStateFromView(focusOverride: window?.firstResponder === platformTextView)
+    }
+
+    func setAutoIndentOnNewline(_ enabled: Bool) {
+        coordinator.setAutoIndentOnNewline(enabled)
     }
 
     private func setupHierarchy() {

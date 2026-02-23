@@ -21,7 +21,7 @@ struct ContentView: View {
             VStack(spacing: 12) {
                 EditorHostView(model: model)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background{
+                    .background {
                         Rectangle().fill(.ultraThinMaterial)
                             .clipShape(.rect(cornerRadius: 8))
                     }
@@ -45,21 +45,21 @@ struct ContentView: View {
             }
             .scenePadding()
             .toolbar {
-                ToolbarItem(placement:.navigation) {
-                    Menu{
+                ToolbarItem(placement: .navigation) {
+                    Menu {
                         Picker("Sample", selection: $selectedSnippet) {
                             ForEach(DemoSnippet.allCases) { snippet in
                                 Text(snippet.title).tag(snippet)
                             }
                         }
                         .pickerStyle(.inline)
-                    }label:{
+                    } label: {
                         Text(selectedSnippet.title)
                     }
                     .accessibilityIdentifier("toolbar.snippetMenu")
                 }
 
-                ToolbarItem(placement:.primaryAction) {
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         isSettingsPresented = true
                     } label: {

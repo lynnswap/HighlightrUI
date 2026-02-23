@@ -12,7 +12,6 @@ struct HighlightrEditorModelInitializationTests {
         #expect(model.theme == .automatic(light: "paraiso-light", dark: "paraiso-dark"))
         #expect(model.selection == .zero)
         #expect(model.isEditable)
-        #expect(!model.isFocused)
     }
 
     @Test
@@ -29,6 +28,34 @@ struct HighlightrEditorModelInitializationTests {
         #expect(model.theme == .named("atom-one-dark"))
         #expect(model.selection == .zero)
         #expect(!model.isEditable)
+    }
+}
+
+@MainActor
+struct HighlightrEditorModelRuntimeInitializationTests {
+    @Test
+    func initSetsDefaultValues() {
+        let model = HighlightrEditorModel(language: "swift")
+
         #expect(!model.isFocused)
+        #expect(!model.isUndoable)
+        #expect(!model.isRedoable)
+        #expect(!model.hasText)
+    }
+
+    @Test
+    func initAcceptsCustomValues() {
+        let model = HighlightrEditorModel(
+            language: "swift",
+            isFocused: true,
+            isUndoable: true,
+            isRedoable: false,
+            hasText: true
+        )
+
+        #expect(model.isFocused)
+        #expect(model.isUndoable)
+        #expect(!model.isRedoable)
+        #expect(model.hasText)
     }
 }

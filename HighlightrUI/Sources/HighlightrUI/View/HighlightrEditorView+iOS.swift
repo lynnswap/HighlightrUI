@@ -73,25 +73,30 @@ public final class HighlightrEditorView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    isolated deinit {
-        coordinator.invalidate()
+    public override func didMoveToWindow() {
+        super.didMoveToWindow()
+        coordinator.syncViewFromModel()
     }
 
     public func focus() {
         _ = platformTextView.becomeFirstResponder()
-        model.isFocused = platformTextView.isFirstResponder
+        coordinator.syncStateFromView(focusOverride: true)
     }
 
     public func blur() {
         _ = platformTextView.resignFirstResponder()
-        model.isFocused = platformTextView.isFirstResponder
+        coordinator.syncStateFromView(focusOverride: platformTextView.isFirstResponder)
     }
 
-    public func setInputAccessoryView(_ view: UIView?) {
+    func setInputAccessoryView(_ view: UIView?) {
         platformTextView.inputAccessoryView = view
         if platformTextView.isFirstResponder {
             platformTextView.reloadInputViews()
         }
+    }
+
+    func setAutoIndentOnNewline(_ enabled: Bool) {
+        coordinator.setAutoIndentOnNewline(enabled)
     }
 
     private func setupHierarchy() {

@@ -92,5 +92,28 @@ struct HighlightrEditorViewConfigurationiOSTests {
 
         _ = host
     }
+
+    @Test
+    func modelFocusRequestBeforeWindowAttachAppliesAfterHosting() async {
+        let model = HighlightrEditorModel(language: "swift", isFocused: true)
+        let view = HighlightrEditorView(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        await AsyncDrain.firstTurn()
+        #expect(model.isFocused == true)
+        #expect(view.platformTextView.isFirstResponder == false)
+
+        let host = WindowHost(view: view)
+        host.pump()
+        await AsyncDrain.firstTurn()
+        host.pump()
+
+        #expect(model.isFocused == true)
+        #expect(view.platformTextView.isFirstResponder == true)
+
+        _ = host
+    }
 }
 #endif

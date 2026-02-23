@@ -25,9 +25,7 @@ let package = Package(
     targets: [
         .target(
             name: "HighlightrUICore",
-            dependencies: [
-                .product(name: "ObservationsCompat", package: "ObservationsCompat"),
-            ],
+            dependencies: [],
             path: "Sources/HighlightrUICore",
             swiftSettings: [
                 .swiftLanguageMode(.v6),
@@ -38,6 +36,7 @@ let package = Package(
             dependencies: [
                 "HighlightrUICore",
                 .product(name: "Highlightr", package: "Highlightr"),
+                .product(name: "ObservationsCompat", package: "ObservationsCompat"),
             ],
             path: "Sources/HighlightrUI",
             swiftSettings: [

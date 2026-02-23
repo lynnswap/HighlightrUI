@@ -5,30 +5,30 @@ import HighlightrUI
 import UIKit
 
 @MainActor
-struct EditorHostView: UIViewRepresentable {
+struct EditorHostView: UIViewControllerRepresentable {
     let model: HighlightrEditorModel
 
-    func makeUIView(context: Context) -> HighlightrEditorView {
-        let view = HighlightrEditorView(model: model)
-        view.accessibilityIdentifier = "editor.host"
-        return view
+    func makeUIViewController(context: Context) -> HighlightrEditorViewController {
+        let controller = HighlightrEditorViewController(model: model)
+        controller.editorView.accessibilityIdentifier = "editor.host"
+        return controller
     }
 
-    func updateUIView(_ uiView: HighlightrEditorView, context: Context) {}
+    func updateUIViewController(_ uiViewController: HighlightrEditorViewController, context: Context) {}
 }
 #elseif os(macOS)
 import AppKit
 
 @MainActor
-struct EditorHostView: NSViewRepresentable {
+struct EditorHostView: NSViewControllerRepresentable {
     let model: HighlightrEditorModel
 
-    func makeNSView(context: Context) -> HighlightrEditorView {
-        let view = HighlightrEditorView(model: model)
-        view.setAccessibilityIdentifier("editor.host")
-        return view
+    func makeNSViewController(context: Context) -> HighlightrEditorViewController {
+        let controller = HighlightrEditorViewController(model: model)
+        controller.editorView.setAccessibilityIdentifier("editor.host")
+        return controller
     }
 
-    func updateNSView(_ nsView: HighlightrEditorView, context: Context) {}
+    func updateNSViewController(_ nsViewController: HighlightrEditorViewController, context: Context) {}
 }
 #endif

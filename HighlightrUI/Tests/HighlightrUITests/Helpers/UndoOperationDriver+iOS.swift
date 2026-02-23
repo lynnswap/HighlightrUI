@@ -101,11 +101,19 @@ final class UndoOperationDriver {
             ),
             "\(state)"
         )
+        #expect(
+            model.isUndoable == (textView.undoManager?.canUndo ?? false),
+            "\(state)"
+        )
+        #expect(
+            model.isRedoable == (textView.undoManager?.canRedo ?? false),
+            "\(state)"
+        )
     }
 
     private func debugState(prefix: String) -> String {
         let selection = textView.selectedRange
-        return "\(prefix) | textView=\"\(currentText)\" model=\"\(model.text)\" selection=\(selection.location),\(selection.length) modelSelection=\(model.selection.location),\(model.selection.length)"
+        return "\(prefix) | textView=\"\(currentText)\" model=\"\(model.text)\" selection=\(selection.location),\(selection.length) modelSelection=\(model.selection.location),\(model.selection.length) undo(view:\(textView.undoManager?.canUndo ?? false), model:\(model.isUndoable)) redo(view:\(textView.undoManager?.canRedo ?? false), model:\(model.isRedoable))"
     }
 
     private func performUndoStep(_ operation: () -> Void) async {

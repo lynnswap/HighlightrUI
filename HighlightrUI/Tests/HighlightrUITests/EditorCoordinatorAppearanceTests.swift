@@ -2,6 +2,22 @@ import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 
+@MainActor
+private func waitUntil(
+    timeoutNanoseconds: UInt64 = 3_000_000_000,
+    condition: @escaping @MainActor () -> Bool
+) async {
+    let clock = ContinuousClock()
+    let start = clock.now
+
+    while !condition() {
+        if start.duration(to: clock.now) >= .nanoseconds(Int64(timeoutNanoseconds)) {
+            break
+        }
+        await AsyncDrain.firstTurn()
+    }
+}
+
 #if canImport(UIKit)
 import UIKit
 
@@ -18,7 +34,6 @@ struct EditorCoordinatorAppearanceTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
@@ -28,12 +43,15 @@ struct EditorCoordinatorAppearanceTests {
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
 
         model.theme = .named("github")
-        await AsyncDrain.firstTurn()
+        await waitUntil {
+            engine.setThemeNameCalls == ["paraiso-light", "github"]
+        }
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
 
         model.theme = .named("github")
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -52,7 +70,6 @@ struct EditorCoordinatorAppearanceTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         coordinator.applyAppearance(colorScheme: .dark)
@@ -61,6 +78,7 @@ struct EditorCoordinatorAppearanceTests {
         await AsyncDrain.firstTurn()
 
         #expect(engine.setThemeNameCalls == ["paraiso-light", "paraiso-dark", "paraiso-light"])
+        withExtendedLifetime(coordinator) {}
     }
 }
 
@@ -80,7 +98,6 @@ struct EditorCoordinatorAppearanceTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
@@ -90,12 +107,15 @@ struct EditorCoordinatorAppearanceTests {
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
 
         model.theme = .named("github")
-        await AsyncDrain.firstTurn()
+        await waitUntil {
+            engine.setThemeNameCalls == ["paraiso-light", "github"]
+        }
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
 
         model.theme = .named("github")
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
+        withExtendedLifetime(coordinator) {}
     }
 
     @Test
@@ -114,7 +134,6 @@ struct EditorCoordinatorAppearanceTests {
             engine: engine,
             initialColorScheme: .light
         )
-        defer { coordinator.invalidate() }
 
         await AsyncDrain.firstTurn()
         coordinator.applyAppearance(colorScheme: .dark)
@@ -123,6 +142,7 @@ struct EditorCoordinatorAppearanceTests {
         await AsyncDrain.firstTurn()
 
         #expect(engine.setThemeNameCalls == ["paraiso-light", "paraiso-dark", "paraiso-light"])
+        withExtendedLifetime(coordinator) {}
     }
 }
 #endif

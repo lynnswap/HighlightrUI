@@ -19,10 +19,10 @@ let model = HighlightrEditorModel(
     language: "javascript"
 )
 
-let editor = HighlightrEditorView(model: model)
-editor.setInputAccessoryView(UIToolbar())
-
-let controller = HighlightrEditorViewController(editorView: editor)
+let controller = HighlightrEditorViewController(
+    model: model
+)
+controller.perform(.focus)
 ```
 
 ## AppKit Example
@@ -36,22 +36,21 @@ let model = HighlightrEditorModel(
     language: "swift"
 )
 
-let editor = HighlightrEditorView(model: model)
-let controller = HighlightrEditorViewController(editorView: editor)
+let controller = HighlightrEditorViewController(
+    model: model
+)
 ```
+
+On iOS, `HighlightrEditorViewController` includes a built-in fixed coding keyboard toolbar.
 
 ## Core API
 
-```swift
-let model = HighlightrEditorModel(text: "", language: "swift")
+`HighlightrUI` v2 exposes state via `@Observable` properties.
 
-let stream = model.snapshotStream()
-Task {
-    for await snapshot in stream {
-        print(snapshot.text)
-    }
-}
-```
+- Document state: `text`, `language`, `theme`, `selection`, `isEditable`
+- Runtime state: `isFocused`, `isUndoable`, `isRedoable`, `hasText`
+
+Read/update those properties directly on `HighlightrEditorModel`.
 
 ## Testing
 

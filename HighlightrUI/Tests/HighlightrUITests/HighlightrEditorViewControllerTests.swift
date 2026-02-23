@@ -20,6 +20,20 @@ struct HighlightrEditorViewControllerTests {
         #expect(controller.view === editorView)
         #expect(controller.editorView === editorView)
     }
+
+    @Test
+    func initWithModelCreatesEditorViewUsingModel() {
+        let model = HighlightrEditorModel(language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadViewIfNeeded()
+
+        #expect(controller.editorView.model === model)
+        #expect(controller.view === controller.editorView)
+    }
 }
 
 #elseif canImport(AppKit)
@@ -39,6 +53,20 @@ struct HighlightrEditorViewControllerTests {
 
         #expect(controller.view === editorView)
         #expect(controller.editorView === editorView)
+    }
+
+    @Test
+    func initWithModelCreatesEditorViewUsingModel() {
+        let model = HighlightrEditorModel(language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadView()
+
+        #expect(controller.editorView.model === model)
+        #expect(controller.view === controller.editorView)
     }
 }
 #endif
