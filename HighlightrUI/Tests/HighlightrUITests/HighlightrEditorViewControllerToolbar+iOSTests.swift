@@ -131,6 +131,25 @@ struct HighlightrEditorViewControllerToolbariOSTests {
         #expect(redoButton(in: toolbar)?.isEnabled == false)
     }
 
+    @Test
+    func controllerReleasesAfterToolbarStateSyncStarts() async {
+        weak var releasedController: HighlightrEditorViewController?
+
+        do {
+            let model = HighlightrEditorModel(language: "swift")
+            var controller: HighlightrEditorViewController? = HighlightrEditorViewController(
+                model: model,
+                engineFactory: { MockSyntaxHighlightingEngine() }
+            )
+            controller?.loadViewIfNeeded()
+            releasedController = controller
+            controller = nil
+        }
+
+        await AsyncDrain.firstTurn()
+        #expect(releasedController == nil)
+    }
+
     private func hasRedoButton(in toolbar: UIToolbar?) -> Bool {
         toolbar?.items?.contains(where: { $0.accessibilityIdentifier == "highlightr.keyboard.redo" }) == true
     }

@@ -197,10 +197,12 @@ public final class HighlightrEditorViewController: UIViewController {
 
     private func startToolbarStateSync() {
         toolbarStateSyncTask?.cancel()
-        toolbarStateSyncTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            for await _ in editorView.model.snapshotStream() {
+        toolbarStateSyncTask = Task { @MainActor [weak self, model = editorView.model] in
+            for await _ in model.snapshotStream() {
                 if Task.isCancelled {
+                    break
+                }
+                guard let self else {
                     break
                 }
                 updateToolbarCommandAvailability()
