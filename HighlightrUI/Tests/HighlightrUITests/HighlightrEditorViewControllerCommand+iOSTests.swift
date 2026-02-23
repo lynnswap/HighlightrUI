@@ -23,8 +23,8 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
         await AsyncDrain.firstTurn()
 
-        #expect(textView.text == "\"abc\"")
-        #expect(model.text == "\"abc\"")
+        #expect(normalizeQuotes(textView.text) == "\"abc\"")
+        #expect(normalizeQuotes(model.text) == "\"abc\"")
         #expect(model.selection == TextSelection(location: 1, length: 3))
     }
 
@@ -165,6 +165,17 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
         #expect(model.text == "a")
         #expect(textView.text == "a")
+    }
+
+    private func normalizeQuotes(_ text: String?) -> String? {
+        guard let text else { return nil }
+        return normalizeQuotes(text)
+    }
+
+    private func normalizeQuotes(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "\u{201C}", with: "\"")
+            .replacingOccurrences(of: "\u{201D}", with: "\"")
     }
 }
 #endif

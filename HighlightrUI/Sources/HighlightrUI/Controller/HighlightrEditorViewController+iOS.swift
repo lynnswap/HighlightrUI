@@ -14,7 +14,6 @@ public final class HighlightrEditorViewController: UIViewController {
     private var toolbarFlexibleSpaceItem: UIBarButtonItem?
     private var toolbarDismissItem: UIBarButtonItem?
     private weak var keyboardToolbar: UIToolbar?
-    private var toolbarStateSyncTask: Task<Void, Never>?
 
     public convenience init(
         model: HighlightrEditorModel,
@@ -44,9 +43,11 @@ public final class HighlightrEditorViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         editorView.setInputAccessoryView(makeKeyboardToolbar())
+        editorView.setViewStateChangeHandler { [weak self] in
+            self?.updateToolbarCommandAvailability()
+        }
         registerSizeClassChanges()
         updateToolbarCommandAvailability()
-        startToolbarStateSync()
     }
 
     @available(*, unavailable)
@@ -56,10 +57,6 @@ public final class HighlightrEditorViewController: UIViewController {
 
     public override func loadView() {
         view = editorView
-    }
-
-    isolated deinit {
-        toolbarStateSyncTask?.cancel()
     }
 
     public func perform(_ command: HighlightrEditorCommand) {
@@ -193,21 +190,6 @@ public final class HighlightrEditorViewController: UIViewController {
                 self?.perform(command)
             }
         )
-    }
-
-    private func startToolbarStateSync() {
-        toolbarStateSyncTask?.cancel()
-        toolbarStateSyncTask = Task { @MainActor [weak self, model = editorView.model] in
-            for await _ in model.snapshotStream() {
-                if Task.isCancelled {
-                    break
-                }
-                guard let self else {
-                    break
-                }
-                updateToolbarCommandAvailability()
-            }
-        }
     }
 
     private func updateToolbarCommandAvailability() {

@@ -9,6 +9,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     private let model: HighlightrEditorModel
     private weak var textView: UITextView?
     private let engine: any SyntaxHighlightingEngine
+    var onViewStateChanged: (@MainActor () -> Void)?
 
     private var snapshotTask: Task<Void, Never>?
     private var colorScheme: EditorColorScheme
@@ -143,6 +144,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
             model.isFocused = focused
         }
         syncUndoAvailabilityFromView(textView)
+        onViewStateChanged?()
     }
 
     private func applyModelSnapshot(_ snapshot: EditorSnapshot) {
@@ -179,6 +181,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
             _ = textView.resignFirstResponder()
         }
         syncUndoAvailabilityFromView(textView)
+        onViewStateChanged?()
     }
 
     private func applyLanguageIfNeeded(_ language: EditorLanguage) {
@@ -249,6 +252,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     private let model: HighlightrEditorModel
     private weak var textView: NSTextView?
     private let engine: any SyntaxHighlightingEngine
+    var onViewStateChanged: (@MainActor () -> Void)?
 
     private var snapshotTask: Task<Void, Never>?
     private var colorScheme: EditorColorScheme
@@ -371,6 +375,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
             model.isFocused = focused
         }
         syncUndoAvailabilityFromView(textView)
+        onViewStateChanged?()
     }
 
     private func applyModelSnapshot(_ snapshot: EditorSnapshot) {
@@ -407,6 +412,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
             textView.window?.makeFirstResponder(nil)
         }
         syncUndoAvailabilityFromView(textView)
+        onViewStateChanged?()
     }
 
     private func applyLanguageIfNeeded(_ language: EditorLanguage) {

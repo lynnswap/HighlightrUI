@@ -98,6 +98,10 @@ public final class HighlightrEditorView: UIView {
         coordinator.setAutoIndentOnNewline(enabled)
     }
 
+    func setViewStateChangeHandler(_ handler: (@MainActor () -> Void)?) {
+        coordinator.onViewStateChanged = handler
+    }
+
     private func setupHierarchy() {
         addSubview(platformTextView)
         platformTextView.translatesAutoresizingMaskIntoConstraints = false

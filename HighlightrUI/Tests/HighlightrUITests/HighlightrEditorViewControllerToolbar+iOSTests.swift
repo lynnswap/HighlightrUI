@@ -84,6 +84,34 @@ struct HighlightrEditorViewControllerToolbariOSTests {
     }
 
     @Test
+    func editMenuReflectsExternalModelChangesAfterViewSync() async {
+        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadViewIfNeeded()
+
+        let toolbar = controller.editorView.platformTextView.inputAccessoryView as? UIToolbar
+        let editItem = toolbar?.items?.first(where: { $0.accessibilityIdentifier == "highlightr.keyboard.editMenu" })
+        #expect(editItem != nil)
+        #expect(editItem?.isEnabled == true)
+
+        model.text = ""
+        await AsyncDrain.firstTurn()
+        #expect(editItem?.isEnabled == false)
+
+        model.text = "z"
+        await AsyncDrain.firstTurn()
+        #expect(editItem?.isEnabled == true)
+
+        model.isEditable = false
+        await AsyncDrain.firstTurn()
+        #expect(editItem?.isEnabled == false)
+    }
+
+    @Test
     func redoButtonAlwaysVisibleInCompactAndTracksEnabledState() async {
         let controller = HighlightrEditorViewController(
             model: HighlightrEditorModel(language: "swift"),
@@ -132,7 +160,7 @@ struct HighlightrEditorViewControllerToolbariOSTests {
     }
 
     @Test
-    func controllerReleasesAfterToolbarStateSyncStarts() async {
+    func controllerReleasesAfterToolbarObservationSetup() async {
         weak var releasedController: HighlightrEditorViewController?
 
         do {
