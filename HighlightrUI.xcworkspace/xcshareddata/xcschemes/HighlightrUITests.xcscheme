@@ -18,7 +18,7 @@
                BlueprintIdentifier = "HighlightrUITests"
                BuildableName = "HighlightrUITests"
                BlueprintName = "HighlightrUITests"
-               ReferencedContainer = "container:HighlightrUI">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -37,7 +37,7 @@
                BlueprintIdentifier = "HighlightrUITests"
                BuildableName = "HighlightrUITests"
                BlueprintName = "HighlightrUITests"
-               ReferencedContainer = "container:HighlightrUI">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
       </Testables>

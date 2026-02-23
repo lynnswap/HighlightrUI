@@ -202,7 +202,7 @@
 			mainGroup = AB69AF472F4C2B2D003C458D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F0A100000000000000000002 /* XCLocalSwiftPackageReference "../HighlightrUI" */,
+				F0A100000000000000000002 /* XCLocalSwiftPackageReference ".." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AB69AF512F4C2B2D003C458D /* Products */;
@@ -620,16 +620,16 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		F0A100000000000000000002 /* XCLocalSwiftPackageReference "../HighlightrUI" */ = {
+		F0A100000000000000000002 /* XCLocalSwiftPackageReference ".." */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../HighlightrUI;
+			relativePath = ..;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		F0A100000000000000000003 /* HighlightrUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F0A100000000000000000002 /* XCLocalSwiftPackageReference "../HighlightrUI" */;
+			package = F0A100000000000000000002 /* XCLocalSwiftPackageReference ".." */;
 			productName = HighlightrUI;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -78,7 +78,7 @@ xcrun simctl list devices available
 
 ## Migration
 
-See [`Migration`](HighlightrUI/Docs/Migration.md).
+See [`Migration`](Docs/Migration.md).
 
 ## License
 
