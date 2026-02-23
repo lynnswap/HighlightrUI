@@ -33,7 +33,8 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
 
         textView.delegate = self
         applyDocumentSnapshot(currentDocumentObservation)
-        syncRuntimeStateFromView(textView)
+        let keepFocusedRequest = model.isFocused && !textView.isFirstResponder
+        syncRuntimeStateFromView(textView, focusOverride: keepFocusedRequest ? true : nil)
         startDocumentSync()
     }
 
@@ -174,15 +175,22 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
             textView.isEditable = snapshot.isEditable
         }
 
+        var focusOverride: Bool?
         if snapshot.isFocused {
             if !textView.isFirstResponder {
                 _ = textView.becomeFirstResponder()
             }
+            if !textView.isFirstResponder {
+                focusOverride = true
+            }
         } else if textView.isFirstResponder {
             _ = textView.resignFirstResponder()
+            if textView.isFirstResponder {
+                focusOverride = false
+            }
         }
 
-        syncRuntimeStateFromView(textView)
+        syncRuntimeStateFromView(textView, focusOverride: focusOverride)
     }
 
     private func syncRuntimeStateFromView(_ textView: UITextView, focusOverride: Bool? = nil) {
@@ -287,7 +295,8 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
 
         textView.delegate = self
         applyDocumentSnapshot(currentDocumentObservation)
-        syncRuntimeStateFromView(textView)
+        let keepFocusedRequest = model.isFocused && (textView.window?.firstResponder !== textView)
+        syncRuntimeStateFromView(textView, focusOverride: keepFocusedRequest ? true : nil)
         startDocumentSync()
     }
 
@@ -417,15 +426,22 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         }
 
         let isFocused = textView.window?.firstResponder === textView
+        var focusOverride: Bool?
         if snapshot.isFocused {
             if !isFocused {
                 _ = textView.window?.makeFirstResponder(textView)
             }
+            if textView.window?.firstResponder !== textView {
+                focusOverride = true
+            }
         } else if isFocused {
             _ = textView.window?.makeFirstResponder(nil)
+            if textView.window?.firstResponder === textView {
+                focusOverride = false
+            }
         }
 
-        syncRuntimeStateFromView(textView)
+        syncRuntimeStateFromView(textView, focusOverride: focusOverride)
     }
 
     private func syncRuntimeStateFromView(_ textView: NSTextView, focusOverride: Bool? = nil) {

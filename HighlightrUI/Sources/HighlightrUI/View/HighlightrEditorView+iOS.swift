@@ -73,6 +73,11 @@ public final class HighlightrEditorView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    public override func didMoveToWindow() {
+        super.didMoveToWindow()
+        coordinator.syncViewFromModel()
+    }
+
     public func focus() {
         _ = platformTextView.becomeFirstResponder()
         coordinator.syncStateFromView(focusOverride: platformTextView.isFirstResponder)
