@@ -29,6 +29,26 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
     }
 
     @Test
+    func insertCurlyBracesWrapsSelectionAndKeepsSelectedText() async {
+        let model = HighlightrEditorModel(text: "value", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        controller.loadView()
+        let textView = controller.editorView.platformTextView
+        textView.setSelectedRange(NSRange(location: 0, length: 5))
+        controller.perform(.insertCurlyBraces)
+
+        await AsyncDrain.firstTurn()
+
+        #expect(textView.string == "{\n    value\n}")
+        #expect(model.text == "{\n    value\n}")
+        #expect(model.selection == TextSelection(location: 6, length: 5))
+    }
+
+    @Test
     func insertCommandsAtEndKeepCursorAtExpectedPosition() async {
         let model = HighlightrEditorModel(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(

@@ -77,7 +77,20 @@ final class EditorCommandExecutor {
         guard canPerform(.insertCurlyBraces) else { return }
         let selection = clampedSelection(textView.selectedRange)
         let text = textView.text ?? ""
+        let source = text as NSString
         let indent = currentLineIndent(in: text, at: selection.location)
+
+        if selection.length > 0 {
+            let selected = source.substring(with: selection)
+            let replacement = "{\n\(indent)    \(selected)\n\(indent)}"
+            let wrappedSelection = NSRange(
+                location: selection.location + 2 + utf16Count(indent) + 4,
+                length: selection.length
+            )
+            replaceText(in: selection, with: replacement, selectedRangeAfter: wrappedSelection)
+            return
+        }
+
         let replacement = "{\n\(indent)    \n\(indent)}"
         let cursorLocation = selection.location + 2 + utf16Count(indent) + 4
 
