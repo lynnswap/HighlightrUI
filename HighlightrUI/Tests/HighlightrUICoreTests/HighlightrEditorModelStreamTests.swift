@@ -5,7 +5,7 @@ import Testing
 struct HighlightrEditorViewStateTests {
     @Test
     func documentStateMaintainsIndependentFields() {
-        let model = HighlightrEditorView(text: "a", language: "swift")
+        let model = HighlightrModel(text: "a", language: "swift")
 
         model.text = "b"
         model.selection = TextSelection(location: 1, length: 0)
@@ -18,7 +18,7 @@ struct HighlightrEditorViewStateTests {
 
     @Test
     func runtimeStateMaintainsIndependentFields() {
-        let model = HighlightrEditorView(
+        let model = HighlightrModel(
             language: "swift",
             isEditorFocused: false,
             isUndoable: false,

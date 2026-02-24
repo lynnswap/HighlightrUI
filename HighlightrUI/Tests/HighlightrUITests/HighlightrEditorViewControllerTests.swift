@@ -8,7 +8,7 @@ import UIKit
 struct HighlightrEditorViewControllerTests {
     @Test
     func loadViewUsesProvidedEditorView() {
-        let editorView = HighlightrEditorView(
+        let editorView = makeEditorView(
             language: "swift",
         )
         let controller = HighlightrEditorViewController(editorView: editorView)
@@ -21,15 +21,15 @@ struct HighlightrEditorViewControllerTests {
 
     @Test
     func initWithModelCreatesEditorViewUsingModel() {
-        let model = HighlightrEditorView(language: "swift")
+        let model = HighlightrModel(language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
 
-        #expect(controller.editorView.text == model.text)
-        #expect(controller.editorView.language == model.language)
+        #expect(controller.editorView.model.text == model.text)
+        #expect(controller.editorView.model.language == model.language)
         #expect(controller.view === controller.editorView)
     }
 }
@@ -41,7 +41,7 @@ import AppKit
 struct HighlightrEditorViewControllerTests {
     @Test
     func loadViewUsesProvidedEditorView() {
-        let editorView = HighlightrEditorView(
+        let editorView = makeEditorView(
             language: "swift",
         )
         let controller = HighlightrEditorViewController(editorView: editorView)
@@ -54,15 +54,15 @@ struct HighlightrEditorViewControllerTests {
 
     @Test
     func initWithModelCreatesEditorViewUsingModel() {
-        let model = HighlightrEditorView(language: "swift")
+        let model = HighlightrModel(language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadView()
 
-        #expect(controller.editorView.text == model.text)
-        #expect(controller.editorView.language == model.language)
+        #expect(controller.editorView.model.text == model.text)
+        #expect(controller.editorView.model.language == model.language)
         #expect(controller.view === controller.editorView)
     }
 }

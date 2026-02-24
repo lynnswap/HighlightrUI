@@ -14,14 +14,18 @@
 import UIKit
 import HighlightrUI
 
-let controller = HighlightrEditorViewController(
+let model = HighlightrModel(
     text: "console.log('hello')",
     language: "javascript"
 )
+
+let controller = HighlightrEditorViewController(
+    model: model
+)
 controller.perform(.focus)
 
-controller.editorView.theme = .named("github")
-controller.editorView.text = "console.log('updated')"
+model.theme = .named("github")
+model.text = "console.log('updated')"
 ```
 
 ## AppKit Example
@@ -30,26 +34,26 @@ controller.editorView.text = "console.log('updated')"
 import AppKit
 import HighlightrUI
 
-let editorView = HighlightrEditorView(
+let model = HighlightrModel(
     text: "print(\"hello\")",
     language: "swift"
 )
 
-let controller = HighlightrEditorViewController(
-    editorView: editorView
-)
+let editorView = HighlightrEditorView(model: model)
+let controller = HighlightrEditorViewController(model: model)
 ```
 
 On iOS, `HighlightrEditorViewController` includes a built-in fixed coding keyboard toolbar.
 
 ## Core API
 
-`HighlightrUI` exposes state via `@Observable` properties on `HighlightrEditorView`.
+`HighlightrUI` exposes state via `HighlightrModel` (`@Observable`).
 
-- Document state: `text`, `language`, `theme`, `selection`, `isEditable`
-- Runtime state: `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`
+- State: `text`, `language`, `theme`, `selection`, `isEditable`
+- Runtime: `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`
 
-Read/update those properties directly on `HighlightrEditorView` (or via `controller.editorView`).
+`HighlightrEditorView` / `HighlightrEditorViewController` are initialized by injecting a shared `HighlightrModel`.
+Update state directly on `HighlightrModel`.
 
 ## Migration
 

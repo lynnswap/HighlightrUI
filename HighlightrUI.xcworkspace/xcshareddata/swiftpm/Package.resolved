@@ -1,5 +1,5 @@
 {
-  "originHash" : "d6d8a4c950c6b0fe2283c7b04be572763b5c82b6c7bbf4366be23fec93e54aa5",
+  "originHash" : "98f2d412b41a41ddb5aaa2d7cacc1b7f8458a9ee21b8dd04e94b3e1d69c2afe8",
   "pins" : [
     {
       "identity" : "highlighterswift",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "6c51eb35908f4876a9a8d444a0c800632351d0ba",
         "version" : "3.0.0"
+      }
+    },
+    {
+      "identity" : "observationscompat",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lynnswap/ObservationsCompat",
+      "state" : {
+        "revision" : "294bf158024987beba892ef24dd2a17a86c66b5e",
+        "version" : "0.1.1"
       }
     }
   ],

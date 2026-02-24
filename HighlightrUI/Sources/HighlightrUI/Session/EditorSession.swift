@@ -4,21 +4,20 @@ import Foundation
 import UIKit
 
 @MainActor
-final class EditorCoordinator: NSObject, UITextViewDelegate {
-    private weak var owner: HighlightrEditorView?
-    private weak var textView: UITextView?
+final class EditorSession: NSObject, PlatformEditorAdapterDelegate {
+    private let model: HighlightrModel
+    private let adapter: PlatformEditorAdapter
     private let engine: any SyntaxHighlightingEngine
 
     private var colorScheme: EditorColorScheme
 
-    private var isApplyingFromOwner = false
+    private var isApplyingFromModel = false
     private var autoIndentOnNewline = false
     private var isHandlingAutoIndent = false
     private var appliedLanguage: EditorLanguage?
     private var appliedThemeName: String?
 
-    private var highlightTask: Task<Void, Never>?
-    private var highlightRevision: UInt64 = 0
+    private let highlightPipeline: HighlightPipeline
     private var pendingEditedRange: NSRange?
     private var pendingOriginalUTF16Length: Int?
     private var pendingReplacementUTF16Length: Int?
@@ -29,30 +28,34 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         case editedRange(NSRange)
     }
 
+    private var textView: PlatformEditorTextView {
+        adapter.textView
+    }
+
     init(
-        owner: HighlightrEditorView,
-        textView: UITextView,
+        model: HighlightrModel,
+        adapter: PlatformEditorAdapter,
         engine: any SyntaxHighlightingEngine,
         initialColorScheme: EditorColorScheme
     ) {
-        self.owner = owner
-        self.textView = textView
+        self.model = model
+        self.adapter = adapter
         self.engine = engine
+        self.highlightPipeline = HighlightPipeline(engine: engine)
         self.colorScheme = initialColorScheme
         super.init()
 
-        textView.delegate = self
-        syncViewFromOwner(syncRuntimeState: false)
+        self.adapter.delegate = self
+        syncViewFromModel(syncRuntimeState: false)
     }
 
     isolated deinit {
-        cancelHighlightPipeline(resetPendingEditState: false)
+        highlightPipeline.stop()
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
-        guard let owner else { return }
         self.colorScheme = colorScheme
-        applyThemeIfNeeded(owner.theme, force: true)
+        applyThemeIfNeeded(model.theme, force: true)
     }
 
     func setAutoIndentOnNewline(_ enabled: Bool) {
@@ -60,30 +63,78 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     }
 
     func syncStateFromView(focusOverride: Bool? = nil) {
-        guard let textView, let owner, !isApplyingFromOwner else { return }
+        guard !isApplyingFromModel else { return }
 
         let currentText = textView.text ?? ""
         let selectedRange = textView.selectedRange
         let selection = TextSelection(location: selectedRange.location, length: selectedRange.length)
         let editable = textView.isEditable
 
-        if owner.text != currentText || owner.selection != selection || owner.isEditable != editable {
-            owner.applyPlatformDocumentState(
-                text: currentText,
-                selection: selection,
-                isEditable: editable
-            )
+        if model.text != currentText ||
+            model.selection != selection ||
+            model.isEditable != editable
+        {
+            model.text = currentText
+            model.selection = selection
+            model.isEditable = editable
         }
 
         syncRuntimeStateFromView(textView, focusOverride: focusOverride)
     }
 
-    func syncViewFromOwner(syncRuntimeState: Bool = true) {
-        applyOwnerState(syncRuntimeState: syncRuntimeState)
+    func syncViewFromModel(syncRuntimeState: Bool = true) {
+        applyModelState(syncRuntimeState: syncRuntimeState)
+    }
+
+    func applyCommandEffects(_ effects: [EditorCommandEffect]) {
+        syncViewFromModel(syncRuntimeState: false)
+        for effect in effects {
+            switch effect {
+            case .requestFocus(let shouldFocus):
+                model.isEditorFocused = shouldFocus
+                syncViewFromModel()
+            case .requestUndo:
+                textView.undoManager?.undo()
+                syncStateFromView()
+            case .requestRedo:
+                textView.undoManager?.redo()
+                syncStateFromView()
+            case .replaceText(let range, let replacement, let selectionAfter):
+                applyTextReplacement(
+                    range: range,
+                    replacement: replacement,
+                    selectionAfter: selectionAfter
+                )
+            }
+        }
+    }
+
+    func adapterDidChangeText(_ adapter: PlatformEditorAdapter) {
+        textViewDidChange(adapter.textView)
+    }
+
+    func adapterDidChangeSelection(_ adapter: PlatformEditorAdapter) {
+        textViewDidChangeSelection(adapter.textView)
+    }
+
+    func adapterDidBeginEditing(_ adapter: PlatformEditorAdapter) {
+        textViewDidBeginEditing(adapter.textView)
+    }
+
+    func adapterDidEndEditing(_ adapter: PlatformEditorAdapter) {
+        textViewDidEndEditing(adapter.textView)
+    }
+
+    func adapter(
+        _ adapter: PlatformEditorAdapter,
+        shouldChangeTextIn range: NSRange,
+        replacementText text: String
+    ) -> Bool {
+        textView(adapter.textView, shouldChangeTextIn: range, replacementText: text)
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        guard !isApplyingFromOwner, !isApplyingHighlightAttributes else { return }
+        guard !isApplyingFromModel, !isApplyingHighlightAttributes else { return }
         scheduleHighlightForPendingEdit(in: textView)
         syncStateFromView()
     }
@@ -141,7 +192,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
 
         guard
             autoIndentOnNewline,
-            !isApplyingFromOwner,
+            !isApplyingFromModel,
             !isHandlingAutoIndent,
             text == "\n"
         else {
@@ -184,37 +235,37 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         return false
     }
 
-    private func applyOwnerState(syncRuntimeState: Bool) {
-        guard let textView, let owner else { return }
+    private func applyModelState(syncRuntimeState: Bool) {
+        let textView = self.textView
 
-        isApplyingFromOwner = true
-        defer { isApplyingFromOwner = false }
+        isApplyingFromModel = true
+        defer { isApplyingFromModel = false }
 
-        applyLanguageIfNeeded(owner.language)
-        applyThemeIfNeeded(owner.theme)
+        applyLanguageIfNeeded(model.language)
+        applyThemeIfNeeded(model.theme)
 
-        let shouldResetUndoHistory = textView.text != owner.text
+        let shouldResetUndoHistory = textView.text != model.text
         if shouldResetUndoHistory {
-            textView.text = owner.text
+            textView.text = model.text
             textView.undoManager?.removeAllActions()
             scheduleFullHighlightIfPossible()
         }
 
-        let clampedSelection = Self.clampedSelection(owner.selection, text: textView.text ?? "")
-        if owner.selection != clampedSelection {
-            owner.applyPlatformSelectionState(clampedSelection)
+        let clampedSelection = Self.clampedSelection(model.selection, text: textView.text ?? "")
+        if model.selection != clampedSelection {
+            model.selection = clampedSelection
         }
         let clampedRange = NSRange(location: clampedSelection.location, length: clampedSelection.length)
         if textView.selectedRange != clampedRange {
             textView.selectedRange = clampedRange
         }
 
-        if textView.isEditable != owner.isEditable {
-            textView.isEditable = owner.isEditable
+        if textView.isEditable != model.isEditable {
+            textView.isEditable = model.isEditable
         }
 
         var focusOverride: Bool?
-        if owner.isEditorFocused {
+        if model.isEditorFocused {
             if !textView.isFirstResponder {
                 _ = textView.becomeFirstResponder()
             }
@@ -231,24 +282,21 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     }
 
     private func syncRuntimeStateFromView(_ textView: UITextView, focusOverride: Bool? = nil) {
-        guard let owner else { return }
         let focused = focusOverride ?? textView.isFirstResponder
         let canUndo = textView.undoManager?.canUndo ?? false
         let canRedo = textView.undoManager?.canRedo ?? false
 
         guard
-            owner.isEditorFocused != focused ||
-            owner.isUndoable != canUndo ||
-            owner.isRedoable != canRedo
+            model.isEditorFocused != focused ||
+            model.isUndoable != canUndo ||
+            model.isRedoable != canRedo
         else {
             return
         }
 
-        owner.applyPlatformRuntimeState(
-            isEditorFocused: focused,
-            isUndoable: canUndo,
-            isRedoable: canRedo
-        )
+        model.isEditorFocused = focused
+        model.isUndoable = canUndo
+        model.isRedoable = canRedo
     }
 
     private func applyLanguageIfNeeded(_ language: EditorLanguage) {
@@ -267,7 +315,6 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     }
 
     private func scheduleFullHighlightIfPossible() {
-        guard let textView else { return }
         let textStorage = textView.textStorage
         let source = textStorage.string
         scheduleHighlightRequest(source: source, scope: .fullDocument)
@@ -303,7 +350,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     }
 
     private func cancelHighlightPipeline(resetPendingEditState: Bool) {
-        highlightTask?.cancel()
+        highlightPipeline.stop()
         if resetPendingEditState {
             clearPendingEditState()
         }
@@ -323,22 +370,10 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
             return
         }
 
-        let expectedSource = sourceUTF16.substring(with: safeRange)
-
-        highlightRevision &+= 1
-        let revision = highlightRevision
-
-        cancelHighlightPipeline(resetPendingEditState: false)
-        let engine = self.engine
-        highlightTask = Task { [weak self] in
-            let payload = await engine.renderHighlightPayload(source: source, in: safeRange)
-            guard !Task.isCancelled else { return }
-            guard let self else { return }
-
-            self.applyHighlightPayload(
+        highlightPipeline.schedule(source: source, range: safeRange) { [weak self] payload, range, expectedSource in
+            self?.applyHighlightPayload(
                 payload,
-                revision: revision,
-                range: safeRange,
+                range: range,
                 expectedSource: expectedSource
             )
         }
@@ -346,13 +381,10 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
 
     private func applyHighlightPayload(
         _ payload: HighlightRenderPayload?,
-        revision: UInt64,
         range: NSRange,
         expectedSource: String
     ) {
-        guard revision == highlightRevision else { return }
         guard let payload else { return }
-        guard let textView else { return }
         let textStorage = textView.textStorage
 
         let currentSource = textStorage.string
@@ -512,6 +544,56 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         }
         return String(line[indentRange])
     }
+
+    private func applyTextReplacement(
+        range: NSRange,
+        replacement: String,
+        selectionAfter: TextSelection
+    ) {
+        let currentText = textView.text ?? ""
+        let safeRange = Self.clampedRange(range, in: currentText)
+        let updatedText = (currentText as NSString).replacingCharacters(in: safeRange, with: replacement)
+        let targetSelection = Self.clampedRange(
+            NSRange(location: selectionAfter.location, length: selectionAfter.length),
+            in: updatedText
+        )
+
+        guard
+            let start = textView.position(from: textView.beginningOfDocument, offset: safeRange.location),
+            let end = textView.position(from: start, offset: safeRange.length),
+            let textRange = textView.textRange(from: start, to: end)
+        else {
+            return
+        }
+
+        performUndoStep {
+            textView.replace(textRange, withText: replacement)
+            setSelectedRange(targetSelection)
+        }
+        syncStateFromView()
+    }
+
+    private func setSelectedRange(_ range: NSRange) {
+        guard
+            let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
+            let end = textView.position(from: start, offset: range.length),
+            let selectedRange = textView.textRange(from: start, to: end)
+        else {
+            return
+        }
+        textView.selectedTextRange = selectedRange
+    }
+
+    private func performUndoStep(_ operation: () -> Void) {
+        guard let undoManager = textView.undoManager else {
+            operation()
+            return
+        }
+
+        undoManager.beginUndoGrouping()
+        operation()
+        undoManager.endUndoGrouping()
+    }
 }
 
 @MainActor
@@ -523,21 +605,20 @@ func editorColorScheme(from style: UIUserInterfaceStyle) -> EditorColorScheme {
 import AppKit
 
 @MainActor
-final class EditorCoordinator: NSObject, NSTextViewDelegate {
-    private weak var owner: HighlightrEditorView?
-    private weak var textView: NSTextView?
+final class EditorSession: NSObject, PlatformEditorAdapterDelegate {
+    private let model: HighlightrModel
+    private let adapter: PlatformEditorAdapter
     private let engine: any SyntaxHighlightingEngine
 
     private var colorScheme: EditorColorScheme
 
-    private var isApplyingFromOwner = false
+    private var isApplyingFromModel = false
     private var autoIndentOnNewline = false
     private var isHandlingAutoIndent = false
     private var appliedLanguage: EditorLanguage?
     private var appliedThemeName: String?
 
-    private var highlightTask: Task<Void, Never>?
-    private var highlightRevision: UInt64 = 0
+    private let highlightPipeline: HighlightPipeline
     private var pendingEditedRange: NSRange?
     private var pendingOriginalUTF16Length: Int?
     private var pendingReplacementUTF16Length: Int?
@@ -548,30 +629,34 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         case editedRange(NSRange)
     }
 
+    private var textView: NSTextView {
+        adapter.textView
+    }
+
     init(
-        owner: HighlightrEditorView,
-        textView: NSTextView,
+        model: HighlightrModel,
+        adapter: PlatformEditorAdapter,
         engine: any SyntaxHighlightingEngine,
         initialColorScheme: EditorColorScheme
     ) {
-        self.owner = owner
-        self.textView = textView
+        self.model = model
+        self.adapter = adapter
         self.engine = engine
+        self.highlightPipeline = HighlightPipeline(engine: engine)
         self.colorScheme = initialColorScheme
         super.init()
 
-        textView.delegate = self
-        syncViewFromOwner(syncRuntimeState: false)
+        self.adapter.delegate = self
+        syncViewFromModel(syncRuntimeState: false)
     }
 
     isolated deinit {
-        cancelHighlightPipeline(resetPendingEditState: false)
+        highlightPipeline.stop()
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
-        guard let owner else { return }
         self.colorScheme = colorScheme
-        applyThemeIfNeeded(owner.theme, force: true)
+        applyThemeIfNeeded(model.theme, force: true)
     }
 
     func setAutoIndentOnNewline(_ enabled: Bool) {
@@ -579,30 +664,78 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     }
 
     func syncStateFromView(focusOverride: Bool? = nil) {
-        guard let textView, let owner, !isApplyingFromOwner else { return }
+        guard !isApplyingFromModel else { return }
 
         let currentText = textView.string
         let selectedRange = textView.selectedRange()
         let selection = TextSelection(location: selectedRange.location, length: selectedRange.length)
         let editable = textView.isEditable
 
-        if owner.text != currentText || owner.selection != selection || owner.isEditable != editable {
-            owner.applyPlatformDocumentState(
-                text: currentText,
-                selection: selection,
-                isEditable: editable
-            )
+        if model.text != currentText ||
+            model.selection != selection ||
+            model.isEditable != editable
+        {
+            model.text = currentText
+            model.selection = selection
+            model.isEditable = editable
         }
 
         syncRuntimeStateFromView(textView, focusOverride: focusOverride)
     }
 
-    func syncViewFromOwner(syncRuntimeState: Bool = true) {
-        applyOwnerState(syncRuntimeState: syncRuntimeState)
+    func syncViewFromModel(syncRuntimeState: Bool = true) {
+        applyModelState(syncRuntimeState: syncRuntimeState)
+    }
+
+    func applyCommandEffects(_ effects: [EditorCommandEffect]) {
+        syncViewFromModel(syncRuntimeState: false)
+        for effect in effects {
+            switch effect {
+            case .requestFocus(let shouldFocus):
+                model.isEditorFocused = shouldFocus
+                syncViewFromModel()
+            case .requestUndo:
+                textView.undoManager?.undo()
+                syncStateFromView()
+            case .requestRedo:
+                textView.undoManager?.redo()
+                syncStateFromView()
+            case .replaceText(let range, let replacement, let selectionAfter):
+                applyTextReplacement(
+                    range: range,
+                    replacement: replacement,
+                    selectionAfter: selectionAfter
+                )
+            }
+        }
+    }
+
+    func adapterDidChangeText(_ adapter: PlatformEditorAdapter) {
+        textDidChange(Notification(name: NSText.didChangeNotification, object: adapter.textView))
+    }
+
+    func adapterDidChangeSelection(_ adapter: PlatformEditorAdapter) {
+        textViewDidChangeSelection(Notification(name: NSTextView.didChangeSelectionNotification, object: adapter.textView))
+    }
+
+    func adapterDidBeginEditing(_ adapter: PlatformEditorAdapter) {
+        textDidBeginEditing(Notification(name: NSText.didBeginEditingNotification, object: adapter.textView))
+    }
+
+    func adapterDidEndEditing(_ adapter: PlatformEditorAdapter) {
+        textDidEndEditing(Notification(name: NSText.didEndEditingNotification, object: adapter.textView))
+    }
+
+    func adapter(
+        _ adapter: PlatformEditorAdapter,
+        shouldChangeTextIn range: NSRange,
+        replacementText text: String?
+    ) -> Bool {
+        textView(adapter.textView, shouldChangeTextIn: range, replacementString: text)
     }
 
     func textDidChange(_ notification: Notification) {
-        guard let textView, !isApplyingFromOwner, !isApplyingHighlightAttributes else { return }
+        guard !isApplyingFromModel, !isApplyingHighlightAttributes else { return }
         scheduleHighlightForPendingEdit(in: textView)
         syncStateFromView()
     }
@@ -637,7 +770,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
 
         guard
             autoIndentOnNewline,
-            !isApplyingFromOwner,
+            !isApplyingFromModel,
             !isHandlingAutoIndent,
             text == "\n"
         else {
@@ -666,38 +799,38 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         return false
     }
 
-    private func applyOwnerState(syncRuntimeState: Bool) {
-        guard let textView, let owner else { return }
+    private func applyModelState(syncRuntimeState: Bool) {
+        let textView = self.textView
 
-        isApplyingFromOwner = true
-        defer { isApplyingFromOwner = false }
+        isApplyingFromModel = true
+        defer { isApplyingFromModel = false }
 
-        applyLanguageIfNeeded(owner.language)
-        applyThemeIfNeeded(owner.theme)
+        applyLanguageIfNeeded(model.language)
+        applyThemeIfNeeded(model.theme)
 
-        let shouldResetUndoHistory = textView.string != owner.text
+        let shouldResetUndoHistory = textView.string != model.text
         if shouldResetUndoHistory {
-            textView.string = owner.text
+            textView.string = model.text
             textView.undoManager?.removeAllActions()
             scheduleFullHighlightIfPossible()
         }
 
-        let clampedSelection = Self.clampedSelection(owner.selection, text: textView.string)
-        if owner.selection != clampedSelection {
-            owner.applyPlatformSelectionState(clampedSelection)
+        let clampedSelection = Self.clampedSelection(model.selection, text: textView.string)
+        if model.selection != clampedSelection {
+            model.selection = clampedSelection
         }
         let clampedRange = NSRange(location: clampedSelection.location, length: clampedSelection.length)
         if textView.selectedRange() != clampedRange {
             textView.setSelectedRange(clampedRange)
         }
 
-        if textView.isEditable != owner.isEditable {
-            textView.isEditable = owner.isEditable
+        if textView.isEditable != model.isEditable {
+            textView.isEditable = model.isEditable
         }
 
         let isEditorFocused = Self.isTextViewFirstResponder(textView)
         var focusOverride: Bool?
-        if owner.isEditorFocused {
+        if model.isEditorFocused {
             if !isEditorFocused {
                 let becameFocused = Self.requestTextViewFocus(textView)
                 _ = becameFocused
@@ -716,25 +849,22 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     }
 
     private func syncRuntimeStateFromView(_ textView: NSTextView, focusOverride: Bool? = nil) {
-        guard let owner else { return }
         let focusedFromResponder = Self.isTextViewFirstResponder(textView)
         let focused = focusOverride ?? focusedFromResponder
         let canUndo = textView.undoManager?.canUndo ?? false
         let canRedo = textView.undoManager?.canRedo ?? false
 
         guard
-            owner.isEditorFocused != focused ||
-            owner.isUndoable != canUndo ||
-            owner.isRedoable != canRedo
+            model.isEditorFocused != focused ||
+            model.isUndoable != canUndo ||
+            model.isRedoable != canRedo
         else {
             return
         }
 
-        owner.applyPlatformRuntimeState(
-            isEditorFocused: focused,
-            isUndoable: canUndo,
-            isRedoable: canRedo
-        )
+        model.isEditorFocused = focused
+        model.isUndoable = canUndo
+        model.isRedoable = canRedo
     }
 
     private func applyLanguageIfNeeded(_ language: EditorLanguage) {
@@ -753,7 +883,6 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     }
 
     private func scheduleFullHighlightIfPossible() {
-        guard let textView else { return }
         let source = textView.string
         scheduleHighlightRequest(source: source, scope: .fullDocument)
     }
@@ -787,7 +916,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     }
 
     private func cancelHighlightPipeline(resetPendingEditState: Bool) {
-        highlightTask?.cancel()
+        highlightPipeline.stop()
         if resetPendingEditState {
             clearPendingEditState()
         }
@@ -807,22 +936,10 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
             return
         }
 
-        let expectedSource = sourceUTF16.substring(with: safeRange)
-
-        highlightRevision &+= 1
-        let revision = highlightRevision
-
-        cancelHighlightPipeline(resetPendingEditState: false)
-        let engine = self.engine
-        highlightTask = Task { [weak self] in
-            let payload = await engine.renderHighlightPayload(source: source, in: safeRange)
-            guard !Task.isCancelled else { return }
-            guard let self else { return }
-
-            self.applyHighlightPayload(
+        highlightPipeline.schedule(source: source, range: safeRange) { [weak self] payload, range, expectedSource in
+            self?.applyHighlightPayload(
                 payload,
-                revision: revision,
-                range: safeRange,
+                range: range,
                 expectedSource: expectedSource
             )
         }
@@ -830,13 +947,10 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
 
     private func applyHighlightPayload(
         _ payload: HighlightRenderPayload?,
-        revision: UInt64,
         range: NSRange,
         expectedSource: String
     ) {
-        guard revision == highlightRevision else { return }
         guard let payload else { return }
-        guard let textView else { return }
 
         let currentSource = textView.string
         let currentLength = (currentSource as NSString).length
@@ -1022,6 +1136,37 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
             return ""
         }
         return String(line[indentRange])
+    }
+
+    private func applyTextReplacement(
+        range: NSRange,
+        replacement: String,
+        selectionAfter: TextSelection
+    ) {
+        let currentText = textView.string
+        let safeRange = Self.clampedRange(range, in: currentText)
+        let updatedText = (currentText as NSString).replacingCharacters(in: safeRange, with: replacement)
+        let targetSelection = Self.clampedRange(
+            NSRange(location: selectionAfter.location, length: selectionAfter.length),
+            in: updatedText
+        )
+
+        performUndoStep {
+            textView.insertText(replacement, replacementRange: safeRange)
+            textView.setSelectedRange(targetSelection)
+        }
+        syncStateFromView()
+    }
+
+    private func performUndoStep(_ operation: () -> Void) {
+        guard let undoManager = textView.undoManager else {
+            operation()
+            return
+        }
+
+        undoManager.beginUndoGrouping()
+        operation()
+        undoManager.endUndoGrouping()
     }
 }
 

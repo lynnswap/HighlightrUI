@@ -20,7 +20,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
     func initialEngineWiringUsesModelLanguageAndTheme() {
         let engine = MockSyntaxHighlightingEngine()
 
-        _ = HighlightrEditorView(
+        _ = makeEditorView(
             text: "print(1)",
             language: "javascript",
             theme: .named("github"),
@@ -35,7 +35,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
 
     @Test
     func lineWrappingConfigurationUpdatesScrollAndContainer() {
-        let wrappingView = HighlightrEditorView(
+        let wrappingView = makeEditorView(
             language: "swift",
             configuration: .init(lineWrappingEnabled: true, allowsUndo: true),
             engineFactory: { MockSyntaxHighlightingEngine() }
@@ -45,7 +45,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
         #expect(wrappingView.scrollView.hasHorizontalScroller == false)
         #expect(wrappingView.platformTextContainer.lineBreakMode == .byWordWrapping)
 
-        let noWrapView = HighlightrEditorView(
+        let noWrapView = makeEditorView(
             language: "swift",
             configuration: .init(lineWrappingEnabled: false, allowsUndo: true),
             engineFactory: { MockSyntaxHighlightingEngine() }
@@ -58,14 +58,14 @@ struct HighlightrEditorViewConfigurationmacOSTests {
 
     @Test
     func allowsUndoFlagMirrorsTextViewConfiguration() {
-        let disabledUndo = HighlightrEditorView(
+        let disabledUndo = makeEditorView(
             language: "swift",
             configuration: .init(lineWrappingEnabled: false, allowsUndo: false),
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
         #expect(disabledUndo.platformTextView.allowsUndo == false)
 
-        let enabledUndo = HighlightrEditorView(
+        let enabledUndo = makeEditorView(
             language: "swift",
             configuration: .init(lineWrappingEnabled: false, allowsUndo: true),
             engineFactory: { MockSyntaxHighlightingEngine() }
@@ -75,7 +75,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
 
     @Test
     func focusAndBlurMirrorModelWhenWindowHosted() async {
-        let view = HighlightrEditorView(
+        let view = makeEditorView(
             language: "swift",
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
@@ -86,13 +86,13 @@ struct HighlightrEditorViewConfigurationmacOSTests {
         view.focus()
         await AsyncDrain.firstTurn()
         host.pump()
-        #expect(view.isEditorFocused == true)
+        #expect(view.model.isEditorFocused == true)
         #expect(host.window.firstResponder === view.platformTextView)
 
         view.blur()
         await AsyncDrain.firstTurn()
         host.pump()
-        #expect(view.isEditorFocused == false)
+        #expect(view.model.isEditorFocused == false)
         #expect(host.window.firstResponder !== view.platformTextView)
 
         _ = host
@@ -100,21 +100,21 @@ struct HighlightrEditorViewConfigurationmacOSTests {
 
     @Test
     func focusRequestBeforeWindowAttachAppliesAfterHosting() async {
-        let view = HighlightrEditorView(
+        let view = makeEditorView(
             language: "swift",
             isEditorFocused: true,
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
 
         await AsyncDrain.firstTurn()
-        #expect(view.isEditorFocused == true)
+        #expect(view.model.isEditorFocused == true)
 
         let host = WindowHost(view: view)
         host.pump()
         await AsyncDrain.firstTurn()
         host.pump()
 
-        #expect(view.isEditorFocused == true)
+        #expect(view.model.isEditorFocused == true)
         #expect(host.window.firstResponder === view.platformTextView)
 
         _ = host
@@ -122,7 +122,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
 
     @Test
     func blurRequestFailureKeepsModelFocusSynchronizedWithResponderState() async {
-        let view = HighlightrEditorView(
+        let view = makeEditorView(
             language: "swift",
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
@@ -141,7 +141,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
         await AsyncDrain.firstTurn()
         host.pump()
         #expect(window.firstResponder === view.platformTextView)
-        #expect(view.isEditorFocused == true)
+        #expect(view.model.isEditorFocused == true)
 
         window.rejectsBlurRequest = true
         view.blur()
@@ -149,9 +149,26 @@ struct HighlightrEditorViewConfigurationmacOSTests {
         host.pump()
 
         #expect(window.firstResponder === view.platformTextView)
-        #expect(view.isEditorFocused == true)
+        #expect(view.model.isEditorFocused == true)
 
         _ = host
+    }
+
+    @Test
+    func viewReleasesAfterModelObservationSetup() async {
+        weak var releasedView: HighlightrEditorView?
+
+        do {
+            var view: HighlightrEditorView? = makeEditorView(
+                language: "swift",
+                engineFactory: { MockSyntaxHighlightingEngine() }
+            )
+            releasedView = view
+            view = nil
+        }
+
+        await AsyncDrain.firstTurn()
+        #expect(releasedView == nil)
     }
 }
 #endif

@@ -5,7 +5,7 @@ import Testing
 struct HighlightrEditorViewInitializationTests {
     @Test
     func initSetsDefaultValues() {
-        let model = HighlightrEditorView(language: "swift")
+        let model = HighlightrModel(language: "swift")
 
         #expect(model.text == "")
         #expect(model.language == "swift")
@@ -16,7 +16,7 @@ struct HighlightrEditorViewInitializationTests {
 
     @Test
     func initAcceptsCustomValues() {
-        let model = HighlightrEditorView(
+        let model = HighlightrModel(
             text: "print(1)",
             language: "javascript",
             theme: .named("atom-one-dark"),
@@ -35,7 +35,7 @@ struct HighlightrEditorViewInitializationTests {
 struct HighlightrEditorViewRuntimeInitializationTests {
     @Test
     func initSetsDefaultValues() {
-        let model = HighlightrEditorView(language: "swift")
+        let model = HighlightrModel(language: "swift")
 
         #expect(!model.isEditorFocused)
         #expect(!model.isUndoable)
@@ -45,7 +45,7 @@ struct HighlightrEditorViewRuntimeInitializationTests {
 
     @Test
     func initAcceptsCustomValues() {
-        let model = HighlightrEditorView(
+        let model = HighlightrModel(
             text: "x",
             language: "swift",
             isEditorFocused: true,
