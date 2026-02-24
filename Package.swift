@@ -13,30 +13,15 @@ let package = Package(
             name: "HighlightrUI",
             targets: ["HighlightrUI"]
         ),
-        .library(
-            name: "HighlightrUICore",
-            targets: ["HighlightrUICore"]
-        ),
     ],
     dependencies: [
         .package(url: "https://github.com/raspu/Highlightr", from: "2.3.0"),
-        .package(url: "https://github.com/lynnswap/ObservationsCompat", from: "0.1.0"),
     ],
     targets: [
         .target(
-            name: "HighlightrUICore",
-            dependencies: [],
-            path: "HighlightrUI/Sources/HighlightrUICore",
-            swiftSettings: [
-                .swiftLanguageMode(.v6),
-            ]
-        ),
-        .target(
             name: "HighlightrUI",
             dependencies: [
-                "HighlightrUICore",
                 .product(name: "Highlightr", package: "Highlightr"),
-                .product(name: "ObservationsCompat", package: "ObservationsCompat"),
             ],
             path: "HighlightrUI/Sources/HighlightrUI",
             swiftSettings: [
@@ -46,9 +31,7 @@ let package = Package(
         .testTarget(
             name: "HighlightrUITests",
             dependencies: [
-                "HighlightrUICore",
                 "HighlightrUI",
-                .product(name: "ObservationsCompat", package: "ObservationsCompat"),
             ],
             path: "HighlightrUI/Tests",
             sources: [

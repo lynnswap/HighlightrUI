@@ -12,13 +12,13 @@ struct MiniAppTests {
 
     @MainActor
     @Test
-    func highlightrEditorModelCanBeCreated() async throws {
-        let model = HighlightrEditorModel(
+    func highlightrEditorViewCanBeCreated() async throws {
+        let editorView = HighlightrEditorView(
             text: "print(\"hello\")",
             language: "swift"
         )
 
-        #expect(model.text == "print(\"hello\")")
-        #expect(model.language.rawValue == "swift")
+        #expect(editorView.text == "print(\"hello\")")
+        #expect(editorView.language.rawValue == "swift")
     }
 }

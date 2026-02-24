@@ -14,15 +14,14 @@
 import UIKit
 import HighlightrUI
 
-let model = HighlightrEditorModel(
+let controller = HighlightrEditorViewController(
     text: "console.log('hello')",
     language: "javascript"
 )
-
-let controller = HighlightrEditorViewController(
-    model: model
-)
 controller.perform(.focus)
+
+controller.editorView.theme = .named("github")
+controller.editorView.text = "console.log('updated')"
 ```
 
 ## AppKit Example
@@ -31,13 +30,13 @@ controller.perform(.focus)
 import AppKit
 import HighlightrUI
 
-let model = HighlightrEditorModel(
+let editorView = HighlightrEditorView(
     text: "print(\"hello\")",
     language: "swift"
 )
 
 let controller = HighlightrEditorViewController(
-    model: model
+    editorView: editorView
 )
 ```
 
@@ -45,12 +44,12 @@ On iOS, `HighlightrEditorViewController` includes a built-in fixed coding keyboa
 
 ## Core API
 
-`HighlightrUI` v2 exposes state via `@Observable` properties.
+`HighlightrUI` exposes state via `@Observable` properties on `HighlightrEditorView`.
 
 - Document state: `text`, `language`, `theme`, `selection`, `isEditable`
 - Runtime state: `isFocused`, `isUndoable`, `isRedoable`, `hasText`
 
-Read/update those properties directly on `HighlightrEditorModel`.
+Read/update those properties directly on `HighlightrEditorView` (or via `controller.editorView`).
 
 ## Testing
 

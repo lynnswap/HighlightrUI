@@ -1,5 +1,4 @@
 #if canImport(UIKit)
-import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 import UIKit
@@ -8,15 +7,12 @@ import UIKit
 struct HighlightrEditorViewConfigurationiOSTests {
     @Test
     func initialEngineWiringUsesModelLanguageAndTheme() {
-        let model = HighlightrEditorModel(
-            text: "print(1)",
-            language: "javascript",
-            theme: .named("github")
-        )
         let engine = MockSyntaxHighlightingEngine()
 
         _ = HighlightrEditorView(
-            model: model,
+            text: "print(1)",
+            language: "javascript",
+            theme: .named("github"),
             configuration: .init(),
             engineFactory: { engine }
         )
@@ -29,7 +25,7 @@ struct HighlightrEditorViewConfigurationiOSTests {
     @Test
     func lineWrappingConfigurationChangesTextContainerBehavior() {
         let wrappingView = HighlightrEditorView(
-            model: HighlightrEditorModel(language: "swift"),
+            language: "swift",
             configuration: .init(lineWrappingEnabled: true, allowsUndo: true),
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
@@ -37,7 +33,7 @@ struct HighlightrEditorViewConfigurationiOSTests {
         #expect(wrappingView.platformTextView.textContainer.widthTracksTextView == true)
 
         let noWrapView = HighlightrEditorView(
-            model: HighlightrEditorModel(language: "swift"),
+            language: "swift",
             configuration: .init(lineWrappingEnabled: false, allowsUndo: true),
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
@@ -49,7 +45,7 @@ struct HighlightrEditorViewConfigurationiOSTests {
     @Test
     func allowsUndoFalseDisablesUndoManager() {
         let view = HighlightrEditorView(
-            model: HighlightrEditorModel(language: "swift"),
+            language: "swift",
             configuration: .init(lineWrappingEnabled: false, allowsUndo: false),
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
@@ -60,7 +56,7 @@ struct HighlightrEditorViewConfigurationiOSTests {
     @Test
     func setInputAccessoryViewAssignsAccessory() {
         let view = HighlightrEditorView(
-            model: HighlightrEditorModel(language: "swift"),
+            language: "swift",
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
 
@@ -73,7 +69,7 @@ struct HighlightrEditorViewConfigurationiOSTests {
     @Test
     func focusAndBlurMirrorModelWhenWindowHosted() async {
         let view = HighlightrEditorView(
-            model: HighlightrEditorModel(language: "swift"),
+            language: "swift",
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
 
@@ -83,26 +79,26 @@ struct HighlightrEditorViewConfigurationiOSTests {
         view.focus()
         await AsyncDrain.firstTurn()
         host.pump()
-        #expect(view.model.isFocused == true)
+        #expect(view.isEditorFocused == true)
 
         view.blur()
         await AsyncDrain.firstTurn()
         host.pump()
-        #expect(view.model.isFocused == false)
+        #expect(view.isEditorFocused == false)
 
         _ = host
     }
 
     @Test
-    func modelFocusRequestBeforeWindowAttachAppliesAfterHosting() async {
-        let model = HighlightrEditorModel(language: "swift", isFocused: true)
+    func focusRequestBeforeWindowAttachAppliesAfterHosting() async {
         let view = HighlightrEditorView(
-            model: model,
+            language: "swift",
+            isEditorFocused: true,
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
 
         await AsyncDrain.firstTurn()
-        #expect(model.isFocused == true)
+        #expect(view.isEditorFocused == true)
         #expect(view.platformTextView.isFirstResponder == false)
 
         let host = WindowHost(view: view)
@@ -110,7 +106,7 @@ struct HighlightrEditorViewConfigurationiOSTests {
         await AsyncDrain.firstTurn()
         host.pump()
 
-        #expect(model.isFocused == true)
+        #expect(view.isEditorFocused == true)
         #expect(view.platformTextView.isFirstResponder == true)
 
         _ = host

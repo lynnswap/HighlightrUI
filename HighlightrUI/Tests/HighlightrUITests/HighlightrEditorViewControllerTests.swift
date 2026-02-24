@@ -1,4 +1,3 @@
-import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 
@@ -10,8 +9,7 @@ struct HighlightrEditorViewControllerTests {
     @Test
     func loadViewUsesProvidedEditorView() {
         let editorView = HighlightrEditorView(
-            model: HighlightrEditorModel(language: "swift"),
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            language: "swift",
         )
         let controller = HighlightrEditorViewController(editorView: editorView)
 
@@ -23,15 +21,15 @@ struct HighlightrEditorViewControllerTests {
 
     @Test
     func initWithModelCreatesEditorViewUsingModel() {
-        let model = HighlightrEditorModel(language: "swift")
+        let model = HighlightrEditorView(language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadViewIfNeeded()
 
-        #expect(controller.editorView.model === model)
+        #expect(controller.editorView.text == model.text)
+        #expect(controller.editorView.language == model.language)
         #expect(controller.view === controller.editorView)
     }
 }
@@ -44,8 +42,7 @@ struct HighlightrEditorViewControllerTests {
     @Test
     func loadViewUsesProvidedEditorView() {
         let editorView = HighlightrEditorView(
-            model: HighlightrEditorModel(language: "swift"),
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            language: "swift",
         )
         let controller = HighlightrEditorViewController(editorView: editorView)
 
@@ -57,15 +54,15 @@ struct HighlightrEditorViewControllerTests {
 
     @Test
     func initWithModelCreatesEditorViewUsingModel() {
-        let model = HighlightrEditorModel(language: "swift")
+        let model = HighlightrEditorView(language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
 
-        #expect(controller.editorView.model === model)
+        #expect(controller.editorView.text == model.text)
+        #expect(controller.editorView.language == model.language)
         #expect(controller.view === controller.editorView)
     }
 }

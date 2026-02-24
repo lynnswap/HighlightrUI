@@ -1,5 +1,5 @@
 import Testing
-@testable import HighlightrUICore
+@testable import HighlightrUI
 
 struct ValueTypesTests {
     @Test

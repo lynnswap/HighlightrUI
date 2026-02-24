@@ -1,7 +1,6 @@
 #if canImport(AppKit)
 import AppKit
 import Foundation
-import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 
@@ -10,11 +9,10 @@ import Testing
 struct EditorCoordinatorAutoIndentmacOSTests {
     @Test
     func autoIndentEnabledInsertsLineIndentOnNewline() async {
-        let model = HighlightrEditorModel(text: "if true {\n    let x = 1", language: "swift")
+        let model = HighlightrEditorView(text: "if true {\n    let x = 1", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            controllerConfiguration: .init(autoIndentOnNewline: true),
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
+            configuration: .init(autoIndentOnNewline: true),
         )
 
         controller.loadView()
@@ -31,11 +29,10 @@ struct EditorCoordinatorAutoIndentmacOSTests {
 
     @Test
     func autoIndentDisabledKeepsPlainNewline() async {
-        let model = HighlightrEditorModel(text: "if true {\n    let x = 1", language: "swift")
+        let model = HighlightrEditorView(text: "if true {\n    let x = 1", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            controllerConfiguration: .init(autoIndentOnNewline: false),
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
+            configuration: .init(autoIndentOnNewline: false),
         )
 
         controller.loadView()

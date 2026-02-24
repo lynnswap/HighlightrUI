@@ -1,11 +1,11 @@
 import Testing
-@testable import HighlightrUICore
+@testable import HighlightrUI
 
 @MainActor
-struct HighlightrEditorModelInitializationTests {
+struct HighlightrEditorViewInitializationTests {
     @Test
     func initSetsDefaultValues() {
-        let model = HighlightrEditorModel(language: "swift")
+        let model = HighlightrEditorView(language: "swift")
 
         #expect(model.text == "")
         #expect(model.language == "swift")
@@ -16,7 +16,7 @@ struct HighlightrEditorModelInitializationTests {
 
     @Test
     func initAcceptsCustomValues() {
-        let model = HighlightrEditorModel(
+        let model = HighlightrEditorView(
             text: "print(1)",
             language: "javascript",
             theme: .named("atom-one-dark"),
@@ -32,12 +32,12 @@ struct HighlightrEditorModelInitializationTests {
 }
 
 @MainActor
-struct HighlightrEditorModelRuntimeInitializationTests {
+struct HighlightrEditorViewRuntimeInitializationTests {
     @Test
     func initSetsDefaultValues() {
-        let model = HighlightrEditorModel(language: "swift")
+        let model = HighlightrEditorView(language: "swift")
 
-        #expect(!model.isFocused)
+        #expect(!model.isEditorFocused)
         #expect(!model.isUndoable)
         #expect(!model.isRedoable)
         #expect(!model.hasText)
@@ -45,16 +45,16 @@ struct HighlightrEditorModelRuntimeInitializationTests {
 
     @Test
     func initAcceptsCustomValues() {
-        let model = HighlightrEditorModel(
+        let model = HighlightrEditorView(
+            text: "x",
             language: "swift",
-            isFocused: true,
+            isEditorFocused: true,
             isUndoable: true,
-            isRedoable: false,
-            hasText: true
+            isRedoable: false
         )
 
-        #expect(model.isFocused)
-        #expect(model.isUndoable)
+        #expect(model.isEditorFocused)
+        #expect(!model.isUndoable)
         #expect(!model.isRedoable)
         #expect(model.hasText)
     }

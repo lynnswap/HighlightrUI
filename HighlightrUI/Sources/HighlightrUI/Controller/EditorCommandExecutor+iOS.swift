@@ -1,6 +1,5 @@
 #if canImport(UIKit)
 import Foundation
-import HighlightrUICore
 import UIKit
 
 @MainActor
@@ -16,28 +15,27 @@ final class EditorCommandExecutor {
     }
 
     func canPerform(_ command: HighlightrEditorCommand) -> Bool {
-        let model = editorView.model
         switch command {
         case .focus:
-            return !model.isFocused
+            return !editorView.isEditorFocused
         case .blur:
-            return model.isFocused
+            return editorView.isEditorFocused
         case .dismissKeyboard:
-            return model.isFocused
+            return editorView.isEditorFocused
         case .undo:
-            return model.isEditable && model.isUndoable
+            return editorView.isEditable && editorView.isUndoable
         case .redo:
-            return model.isEditable && model.isRedoable
+            return editorView.isEditable && editorView.isRedoable
         case .insertIndent:
-            return model.isEditable
+            return editorView.isEditable
         case .insertCurlyBraces:
-            return model.isEditable
+            return editorView.isEditable
         case .insertPair:
-            return model.isEditable
+            return editorView.isEditable
         case .deleteCurrentLine:
-            return model.isEditable && hasCurrentDocumentText
+            return editorView.isEditable && hasCurrentDocumentText
         case .clearText:
-            return model.isEditable && hasCurrentDocumentText
+            return editorView.isEditable && hasCurrentDocumentText
         }
     }
 
@@ -48,12 +46,10 @@ final class EditorCommandExecutor {
         case .blur, .dismissKeyboard:
             editorView.blur()
         case .undo:
-            syncViewFromModelIfNeeded()
             guard canPerform(.undo) else { return }
             textView.undoManager?.undo()
             editorView.coordinator.syncStateFromView()
         case .redo:
-            syncViewFromModelIfNeeded()
             guard canPerform(.redo) else { return }
             textView.undoManager?.redo()
             editorView.coordinator.syncStateFromView()
@@ -72,7 +68,6 @@ final class EditorCommandExecutor {
 
     private func insertIndent() {
         guard canPerform(.insertIndent) else { return }
-        syncViewFromModelIfNeeded()
         let selection = clampedSelection(textView.selectedRange)
         replaceText(
             in: selection,
@@ -83,7 +78,6 @@ final class EditorCommandExecutor {
 
     private func insertCurlyBraces() {
         guard canPerform(.insertCurlyBraces) else { return }
-        syncViewFromModelIfNeeded()
         let selection = clampedSelection(textView.selectedRange)
         let text = textView.text ?? ""
         let source = text as NSString
@@ -112,7 +106,6 @@ final class EditorCommandExecutor {
 
     private func insertPair(_ kind: HighlightrEditorPairKind) {
         guard canPerform(.insertPair(kind)) else { return }
-        syncViewFromModelIfNeeded()
         let (open, close) = pairCharacters(for: kind)
         let selection = clampedSelection(textView.selectedRange)
         let text = textView.text ?? ""
@@ -136,7 +129,6 @@ final class EditorCommandExecutor {
 
     private func deleteCurrentLine() {
         guard canPerform(.deleteCurrentLine) else { return }
-        syncViewFromModelIfNeeded()
         let text = textViewText
         guard !text.isEmpty else { return }
 
@@ -162,7 +154,6 @@ final class EditorCommandExecutor {
 
     private func clearText() {
         guard canPerform(.clearText) else { return }
-        syncViewFromModelIfNeeded()
         let text = textViewText
         let allRange = NSRange(location: 0, length: utf16Count(text))
         replaceText(in: allRange, with: "", selectedRangeAfter: NSRange(location: 0, length: 0))
@@ -242,24 +233,7 @@ final class EditorCommandExecutor {
     }
 
     private var hasCurrentDocumentText: Bool {
-        !textViewText.isEmpty || !editorView.model.text.isEmpty
-    }
-
-    private func syncViewFromModelIfNeeded() {
-        let modelText = editorView.model.text
-        let modelSelection = clampedSelection(
-            NSRange(
-                location: editorView.model.selection.location,
-                length: editorView.model.selection.length
-            ),
-            in: modelText
-        )
-        let viewSelection = clampedSelection(textView.selectedRange, in: modelText)
-
-        guard textViewText != modelText || viewSelection != modelSelection else {
-            return
-        }
-        editorView.coordinator.syncViewFromModel()
+        !textViewText.isEmpty || editorView.hasText
     }
 
     private func trailingLineBreakRange(in source: NSString) -> NSRange? {

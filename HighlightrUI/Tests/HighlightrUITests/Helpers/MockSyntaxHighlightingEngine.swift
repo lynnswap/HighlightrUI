@@ -1,5 +1,4 @@
 import Foundation
-import HighlightrUICore
 @testable import HighlightrUI
 
 #if canImport(UIKit)

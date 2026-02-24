@@ -1,4 +1,3 @@
-import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 

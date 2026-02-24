@@ -1,23 +1,39 @@
 #if canImport(AppKit)
 import AppKit
-import HighlightrUICore
+import Observation
 
 @MainActor
+@Observable
 public final class HighlightrEditorViewController: NSViewController {
     public let editorView: HighlightrEditorView
-    public var model: HighlightrEditorModel { editorView.model }
 
+    @ObservationIgnored
     private let commandExecutor: EditorCommandExecutor
+    @ObservationIgnored
     private let configuration: HighlightrEditorViewControllerConfiguration
 
     public convenience init(
-        model: HighlightrEditorModel,
+        text: String = "",
+        language: EditorLanguage,
+        theme: EditorTheme = .automatic(light: "paraiso-light", dark: "paraiso-dark"),
+        selection: TextSelection = .zero,
+        isEditable: Bool = true,
+        isEditorFocused: Bool = false,
+        isUndoable: Bool = false,
+        isRedoable: Bool = false,
         viewConfiguration: EditorViewConfiguration = .init(),
         controllerConfiguration: HighlightrEditorViewControllerConfiguration = .init(),
         engineFactory: @escaping @MainActor () -> any SyntaxHighlightingEngine = { HighlightrEngine() }
     ) {
         let editorView = HighlightrEditorView(
-            model: model,
+            text: text,
+            language: language,
+            theme: theme,
+            selection: selection,
+            isEditable: isEditable,
+            isEditorFocused: isEditorFocused,
+            isUndoable: isUndoable,
+            isRedoable: isRedoable,
             configuration: viewConfiguration,
             engineFactory: engineFactory
         )

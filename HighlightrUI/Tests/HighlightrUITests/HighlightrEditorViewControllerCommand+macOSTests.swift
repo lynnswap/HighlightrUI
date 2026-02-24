@@ -1,7 +1,6 @@
 #if canImport(AppKit)
 import AppKit
 import Foundation
-import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 
@@ -10,10 +9,9 @@ import Testing
 struct HighlightrEditorViewControllerCommandmacOSTests {
     @Test
     func insertPairWrapsSelectionAndKeepsModelSynchronized() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -30,10 +28,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func insertCurlyBracesWrapsSelectionAndKeepsSelectedText() async {
-        let model = HighlightrEditorModel(text: "value", language: "swift")
+        let model = HighlightrEditorView(text: "value", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -50,10 +47,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func insertCommandsAtEndKeepCursorAtExpectedPosition() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -77,10 +73,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func undoAndRedoAreBlockedWhenModelIsReadOnly() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -114,10 +109,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func deleteCurrentLineAndClearTextCommandsWork() async {
-        let model = HighlightrEditorModel(text: "a\nb\nc", language: "swift")
+        let model = HighlightrEditorView(text: "a\nb\nc", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -135,10 +129,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func deleteCurrentLineAtEOFRemovesTrailingBlankLine() async {
-        let model = HighlightrEditorModel(text: "a\n", language: "swift")
+        let model = HighlightrEditorView(text: "a\n", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -155,10 +148,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func clearAndDeleteCommandsRemainAvailableBeforeViewSync() async {
-        let model = HighlightrEditorModel(text: "", language: "swift")
+        let model = HighlightrEditorView(text: "", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -168,7 +160,7 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(!controller.canPerform(.deleteCurrentLine))
 
         model.text = "line"
-        #expect(textView.string == "")
+        #expect(textView.string == "line")
         #expect(controller.canPerform(.clearText))
         #expect(controller.canPerform(.deleteCurrentLine))
 
@@ -188,10 +180,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func deleteCurrentLineUsesLatestModelTextBeforeViewSync() async {
-        let model = HighlightrEditorModel(text: "old\nline", language: "swift")
+        let model = HighlightrEditorView(text: "old\nline", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -200,7 +191,7 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(textView.string == "old\nline")
 
         model.text = "new"
-        #expect(textView.string == "old\nline")
+        #expect(textView.string == "new")
         #expect(controller.canPerform(.deleteCurrentLine))
 
         controller.perform(.deleteCurrentLine)
@@ -212,10 +203,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func insertIndentUsesLatestModelTextBeforeViewSync() async {
-        let model = HighlightrEditorModel(text: "old", language: "swift")
+        let model = HighlightrEditorView(text: "old", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -224,7 +214,7 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(textView.string == "old")
 
         model.text = "new"
-        #expect(textView.string == "old")
+        #expect(textView.string == "new")
 
         controller.perform(.insertIndent)
         await AsyncDrain.firstTurn()
@@ -235,10 +225,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func insertIndentUsesLatestModelSelectionBeforeViewSync() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -247,7 +236,7 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(textView.selectedRange() == NSRange(location: 0, length: 0))
 
         model.selection = TextSelection(location: 3, length: 0)
-        #expect(textView.selectedRange() == NSRange(location: 0, length: 0))
+        #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
 
         controller.perform(.insertIndent)
         await AsyncDrain.firstTurn()
@@ -260,10 +249,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func undoUsesLatestModelTextBeforeViewSync() async {
-        let model = HighlightrEditorModel(text: "old", language: "swift")
+        let model = HighlightrEditorView(text: "old", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -284,7 +272,7 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(controller.canPerform(.undo))
 
         model.text = "new"
-        #expect(textView.string == "    old")
+        #expect(textView.string == "new")
 
         controller.perform(.undo)
         await AsyncDrain.firstTurn()
@@ -298,10 +286,9 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func redoUsesLatestModelTextBeforeViewSync() async {
-        let model = HighlightrEditorModel(text: "old", language: "swift")
+        let model = HighlightrEditorView(text: "old", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
@@ -325,7 +312,7 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         #expect(controller.canPerform(.redo))
 
         model.text = "new"
-        #expect(textView.string == "old")
+        #expect(textView.string == "new")
 
         controller.perform(.redo)
         await AsyncDrain.firstTurn()
@@ -339,20 +326,19 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
     @Test
     func focusCommandBeforeWindowAttachPreservesPendingFocusRequest() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadView()
-        #expect(model.isFocused == false)
+        #expect(model.isEditorFocused == false)
         #expect(controller.editorView.platformTextView.window == nil)
 
         controller.perform(.focus)
         await AsyncDrain.firstTurn()
 
-        #expect(model.isFocused == true)
+        #expect(model.isEditorFocused == true)
         #expect(!controller.canPerform(.focus))
         #expect(controller.canPerform(.blur))
 
@@ -361,7 +347,7 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
         await AsyncDrain.firstTurn()
         host.pump()
 
-        #expect(model.isFocused == true)
+        #expect(model.isEditorFocused == true)
         #expect(host.window.firstResponder === controller.editorView.platformTextView)
 
         _ = host

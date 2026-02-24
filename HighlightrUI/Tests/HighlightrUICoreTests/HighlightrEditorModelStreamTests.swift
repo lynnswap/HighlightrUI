@@ -1,11 +1,11 @@
 import Testing
-@testable import HighlightrUICore
+@testable import HighlightrUI
 
 @MainActor
-struct HighlightrEditorModelStateTests {
+struct HighlightrEditorViewStateTests {
     @Test
     func documentStateMaintainsIndependentFields() {
-        let model = HighlightrEditorModel(text: "a", language: "swift")
+        let model = HighlightrEditorView(text: "a", language: "swift")
 
         model.text = "b"
         model.selection = TextSelection(location: 1, length: 0)
@@ -18,19 +18,18 @@ struct HighlightrEditorModelStateTests {
 
     @Test
     func runtimeStateMaintainsIndependentFields() {
-        let model = HighlightrEditorModel(
+        let model = HighlightrEditorView(
             language: "swift",
-            isFocused: false,
+            isEditorFocused: false,
             isUndoable: false,
-            isRedoable: false,
-            hasText: false
+            isRedoable: false
         )
 
+        model.text = "b"
         model.isUndoable = true
         model.isRedoable = true
-        model.hasText = true
 
-        #expect(!model.isFocused)
+        #expect(!model.isEditorFocused)
         #expect(model.isUndoable)
         #expect(model.isRedoable)
         #expect(model.hasText)

@@ -4,7 +4,7 @@ import Observation
 
 struct EditorSettingsSheet: View {
     @Binding var selectedSnippet: DemoSnippet
-    @Bindable var model: HighlightrEditorModel
+    @Bindable var editorView: HighlightrEditorView
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -19,7 +19,7 @@ struct EditorSettingsSheet: View {
                     .pickerStyle(.menu)
                     .accessibilityIdentifier("settings.samplePicker")
 
-                    Picker("Language", selection: $model.language) {
+                    Picker("Language", selection: $editorView.language) {
                         ForEach(DemoLanguage.allCases) { language in
                             Text(language.title).tag(language.editorLanguage)
                         }
@@ -27,12 +27,12 @@ struct EditorSettingsSheet: View {
                     .pickerStyle(.menu)
                     .accessibilityIdentifier("settings.languagePicker")
 
-                    Toggle("Editable", isOn: $model.isEditable)
+                    Toggle("Editable", isOn: $editorView.isEditable)
                         .accessibilityIdentifier("settings.editableToggle")
                 }
 
                 Section("Appearance") {
-                    Picker("Theme", selection: $model.theme) {
+                    Picker("Theme", selection: $editorView.theme) {
                         ForEach(DemoTheme.allCases) { theme in
                             Text(theme.title).tag(theme.editorTheme)
                         }

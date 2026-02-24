@@ -4,33 +4,34 @@ This guide summarizes breaking changes introduced in HighlightrUI v2.
 
 ## Overview
 
-- `HighlightrEditorModel` remains the single public editor state model.
-- Public stream APIs are removed; state is consumed via `@Observable` properties.
-- `setViewStateChangeHandler` / `onViewStateChanged` are removed.
-- Internal sync is driven by `ObservationsCompat` over `@Observable` model changes.
+- `HighlightrEditorModel` is removed.
+- `HighlightrUICore` is removed and merged into `HighlightrUI`.
+- Internal stream synchronization (`ObservationsCompat`) is removed.
+- `HighlightrEditorView` is now the single state owner (`@Observable`).
+- `HighlightrEditorViewController` manages commands/toolbar and references `editorView`.
 
 ## API Mapping
 
-- `HighlightrEditorView(model: ...)` -> `HighlightrEditorView(model: ...)`
-- `HighlightrEditorViewController(model: ...)` -> `HighlightrEditorViewController(model: ...)`
+- `HighlightrEditorView(model: ...)` -> `HighlightrEditorView(text:language:theme:selection:isEditable:isFocused:isUndoable:isRedoable:...)`
+- `HighlightrEditorViewController(model: ...)` -> `HighlightrEditorViewController(text:language:...)` or `HighlightrEditorViewController(editorView: ...)`
+- `import HighlightrUICore` -> `import HighlightrUI`
 
-## `HighlightrEditorModel` State
+## State Model
+
+State now lives on `HighlightrEditorView`:
 
 - Document state: `text`, `language`, `theme`, `selection`, `isEditable`
 - Runtime state: `isFocused`, `isUndoable`, `isRedoable`, `hasText`
 
+`hasText` is now derived from `text` and is no longer independently mutable.
+
 ## Removed APIs
 
-- Public snapshot/stream APIs:
-  - `snapshot()`
-  - `snapshotStream(...)`
-  - `textStream(...)`
-  - `themeStream(...)`
-- `EditorSnapshot` / `EditorDocumentSnapshot` (public)
-- `setViewStateChangeHandler` / `onViewStateChanged`
-- `HighlightrEditorCommandAvailability`
+- `HighlightrEditorModel`
+- `HighlightrUICore` product/target
+- `ObservationsCompat`-based editor state streams
 
 ## Notes
 
-- v2 does not provide a compatibility wrapper for removed APIs.
-- App code should read/write `HighlightrEditorModel` properties directly.
+- This release is intentionally breaking and does not include compatibility shims.
+- App code should read/write state through `HighlightrEditorView`.

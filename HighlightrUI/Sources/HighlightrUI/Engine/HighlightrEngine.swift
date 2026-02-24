@@ -1,6 +1,5 @@
 import Foundation
 import Highlightr
-import HighlightrUICore
 
 #if canImport(UIKit)
 import UIKit

@@ -1,5 +1,4 @@
 import Foundation
-import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 
@@ -11,11 +10,11 @@ import UIKit
 struct EditorCoordinatorSyncTests {
     @Test
     func modelToViewTextAndSelectionSync() async {
-        let model = HighlightrEditorModel(text: "hello", language: "swift")
+        let model = HighlightrEditorView(text: "hello", language: "swift")
         let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
@@ -24,8 +23,7 @@ struct EditorCoordinatorSyncTests {
         await AsyncDrain.firstTurn()
         model.text = "updated"
         model.selection = TextSelection(location: 1, length: 3)
-        await AsyncDrain.firstTurn()
-        await AsyncDrain.shortDelay()
+        coordinator.syncViewFromOwner()
 
         #expect(textView.text == "updated")
         #expect(textView.selectedRange == NSRange(location: 1, length: 3))
@@ -34,11 +32,11 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func viewToModelTextAndSelectionSync() async {
-        let model = HighlightrEditorModel(text: "", language: "swift")
+        let model = HighlightrEditorView(text: "", language: "swift")
         let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
@@ -56,19 +54,18 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func selectionClampCorrectsNegativeValues() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
         )
 
         model.selection = TextSelection(location: -10, length: 40)
-        await AsyncDrain.firstTurn()
-        await AsyncDrain.shortDelay()
+        coordinator.syncViewFromOwner()
 
         #expect(textView.selectedRange == NSRange(location: 0, length: 3))
         withExtendedLifetime(coordinator) {}
@@ -76,19 +73,18 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func selectionClampCorrectsOverflowValues() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
         )
 
         model.selection = TextSelection(location: 100, length: 20)
-        await AsyncDrain.firstTurn()
-        await AsyncDrain.shortDelay()
+        coordinator.syncViewFromOwner()
 
         #expect(textView.selectedRange == NSRange(location: 3, length: 0))
         withExtendedLifetime(coordinator) {}
@@ -96,19 +92,18 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func modelEditableReflectsIntoTextView() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
         )
 
         model.isEditable = false
-        await AsyncDrain.firstTurn()
-        await AsyncDrain.shortDelay()
+        coordinator.syncViewFromOwner()
 
         #expect(textView.isEditable == false)
         withExtendedLifetime(coordinator) {}
@@ -116,11 +111,11 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func languageApplyDeduplicatesRepeatedValues() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
@@ -130,13 +125,11 @@ struct EditorCoordinatorSyncTests {
         #expect(engine.setLanguageCalls == ["swift"])
 
         model.language = "swift"
-        await AsyncDrain.firstTurn()
+        coordinator.syncViewFromOwner()
         #expect(engine.setLanguageCalls == ["swift"])
 
         model.language = "json"
-        for _ in 0..<20 where engine.setLanguageCalls != ["swift", "json"] {
-            await AsyncDrain.firstTurn()
-        }
+        coordinator.syncViewFromOwner()
         #expect(engine.setLanguageCalls == ["swift", "json"])
         withExtendedLifetime(coordinator) {}
     }
@@ -151,11 +144,11 @@ import AppKit
 struct EditorCoordinatorSyncTests {
     @Test
     func modelToViewTextAndSelectionSync() async {
-        let model = HighlightrEditorModel(text: "hello", language: "swift")
+        let model = HighlightrEditorView(text: "hello", language: "swift")
         let textView = NSTextView(frame: .zero)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
@@ -164,8 +157,7 @@ struct EditorCoordinatorSyncTests {
         await AsyncDrain.firstTurn()
         model.text = "updated"
         model.selection = TextSelection(location: 1, length: 3)
-        await AsyncDrain.firstTurn()
-        await AsyncDrain.shortDelay()
+        coordinator.syncViewFromOwner()
 
         #expect(textView.string == "updated")
         #expect(textView.selectedRange() == NSRange(location: 1, length: 3))
@@ -174,11 +166,11 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func viewToModelTextAndSelectionSync() async {
-        let model = HighlightrEditorModel(text: "", language: "swift")
+        let model = HighlightrEditorView(text: "", language: "swift")
         let textView = NSTextView(frame: .zero)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
@@ -197,19 +189,18 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func selectionClampCorrectsNegativeValues() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let textView = NSTextView(frame: .zero)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
         )
 
         model.selection = TextSelection(location: -10, length: 40)
-        await AsyncDrain.firstTurn()
-        await AsyncDrain.shortDelay()
+        coordinator.syncViewFromOwner()
 
         #expect(textView.selectedRange() == NSRange(location: 0, length: 3))
         withExtendedLifetime(coordinator) {}
@@ -217,19 +208,18 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func selectionClampCorrectsOverflowValues() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let textView = NSTextView(frame: .zero)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
         )
 
         model.selection = TextSelection(location: 100, length: 20)
-        await AsyncDrain.firstTurn()
-        await AsyncDrain.shortDelay()
+        coordinator.syncViewFromOwner()
 
         #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
         withExtendedLifetime(coordinator) {}
@@ -237,19 +227,18 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func modelEditableReflectsIntoTextView() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let textView = NSTextView(frame: .zero)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
         )
 
         model.isEditable = false
-        await AsyncDrain.firstTurn()
-        await AsyncDrain.shortDelay()
+        coordinator.syncViewFromOwner()
 
         #expect(textView.isEditable == false)
         withExtendedLifetime(coordinator) {}
@@ -257,11 +246,11 @@ struct EditorCoordinatorSyncTests {
 
     @Test
     func languageApplyDeduplicatesRepeatedValues() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let textView = NSTextView(frame: .zero)
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light
@@ -271,25 +260,23 @@ struct EditorCoordinatorSyncTests {
         #expect(engine.setLanguageCalls == ["swift"])
 
         model.language = "swift"
-        await AsyncDrain.firstTurn()
+        coordinator.syncViewFromOwner()
         #expect(engine.setLanguageCalls == ["swift"])
 
         model.language = "json"
-        for _ in 0..<20 where engine.setLanguageCalls != ["swift", "json"] {
-            await AsyncDrain.firstTurn()
-        }
+        coordinator.syncViewFromOwner()
         #expect(engine.setLanguageCalls == ["swift", "json"])
         withExtendedLifetime(coordinator) {}
     }
 
     @Test
     func undoAvailabilityMirrorsUndoManagerState() async {
-        let model = HighlightrEditorModel(text: "", language: "swift")
+        let model = HighlightrEditorView(text: "", language: "swift")
         let textView = NSTextView(frame: .zero)
         textView.allowsUndo = true
         let engine = MockSyntaxHighlightingEngine()
         let coordinator = EditorCoordinator(
-            model: model,
+            owner: model,
             textView: textView,
             engine: engine,
             initialColorScheme: .light

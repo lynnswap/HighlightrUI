@@ -1,19 +1,15 @@
 #if DEBUG && canImport(SwiftUI)
-import HighlightrUICore
 import SwiftUI
 
 private enum HighlightrEditorViewControllerPreviewFactory {
     @MainActor
-    static func makeModel() -> HighlightrEditorModel {
-        HighlightrEditorModel(
-            text: """
-            func compute(_ value: Int) -> Int {
-                if value <= 1 { return 1 }
-                return value * compute(value - 1)
-            }
-            """,
-            language: "swift"
-        )
+    static var previewText: String {
+        """
+        func compute(_ value: Int) -> Int {
+            if value <= 1 { return 1 }
+            return value * compute(value - 1)
+        }
+        """
     }
 }
 
@@ -31,7 +27,10 @@ private struct HighlightrEditorViewControllerPreviewContainer: UIViewControllerR
     }
 
     func makeUIViewController(context: Context) -> HighlightrEditorViewController {
-        HighlightrEditorViewController(model: HighlightrEditorViewControllerPreviewFactory.makeModel())
+        HighlightrEditorViewController(
+            text: HighlightrEditorViewControllerPreviewFactory.previewText,
+            language: "swift"
+        )
     }
 
     func updateUIViewController(_ uiViewController: HighlightrEditorViewController, context: Context) {
@@ -49,7 +48,10 @@ import AppKit
 
 private struct HighlightrEditorViewControllerPreviewContainer: NSViewControllerRepresentable {
     func makeNSViewController(context: Context) -> HighlightrEditorViewController {
-        HighlightrEditorViewController(model: HighlightrEditorViewControllerPreviewFactory.makeModel())
+        HighlightrEditorViewController(
+            text: HighlightrEditorViewControllerPreviewFactory.previewText,
+            language: "swift"
+        )
     }
 
     func updateNSViewController(_ nsViewController: HighlightrEditorViewController, context: Context) {}

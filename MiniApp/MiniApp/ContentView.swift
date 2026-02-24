@@ -11,7 +11,7 @@ import HighlightrUI
 struct ContentView: View {
     @State private var selectedSnippet: DemoSnippet = .swiftPackage
     @State private var isSettingsPresented = false
-    @State private var model = HighlightrEditorModel(
+    @State private var editorView = HighlightrEditorView(
         text: DemoSnippet.swiftPackage.code,
         language: DemoSnippet.swiftPackage.language.editorLanguage
     )
@@ -19,7 +19,7 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                EditorHostView(model: model)
+                EditorHostView(editorView: editorView)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background {
                         Rectangle().fill(.ultraThinMaterial)
@@ -29,14 +29,14 @@ struct ContentView: View {
 
                 HStack {
                     Label(
-                        DemoLanguage.title(for: model.language),
+                        DemoLanguage.title(for: editorView.language),
                         systemImage: "curlybraces"
                     )
                     .accessibilityIdentifier("status.language")
                     Spacer()
                     Label(
-                        model.isEditable ? "Editable" : "Read Only",
-                        systemImage: model.isEditable ? "pencil" : "lock"
+                        editorView.isEditable ? "Editable" : "Read Only",
+                        systemImage: editorView.isEditable ? "pencil" : "lock"
                     )
                     .accessibilityIdentifier("status.editable")
                 }
@@ -72,12 +72,12 @@ struct ContentView: View {
         .sheet(isPresented: $isSettingsPresented) {
             EditorSettingsSheet(
                 selectedSnippet: $selectedSnippet,
-                model: model
+                editorView: editorView
             )
         }
         .onChange(of: selectedSnippet, initial: true) {
-            model.text = selectedSnippet.code
-            model.language = selectedSnippet.language.editorLanguage
+            editorView.text = selectedSnippet.code
+            editorView.language = selectedSnippet.language.editorLanguage
         }
     }
 }

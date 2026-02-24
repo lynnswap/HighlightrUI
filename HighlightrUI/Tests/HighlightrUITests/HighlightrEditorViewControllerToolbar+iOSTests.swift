@@ -1,6 +1,5 @@
 #if canImport(UIKit)
 import Foundation
-import HighlightrUICore
 import Testing
 @testable import HighlightrUI
 import UIKit
@@ -10,8 +9,7 @@ struct HighlightrEditorViewControllerToolbariOSTests {
     @Test
     func controllerInstallsFixedKeyboardToolbar() {
         let controller = HighlightrEditorViewController(
-            model: HighlightrEditorModel(language: "swift"),
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: HighlightrEditorView(language: "swift"),
         )
 
         controller.loadViewIfNeeded()
@@ -42,10 +40,9 @@ struct HighlightrEditorViewControllerToolbariOSTests {
 
     @Test
     func undoRedoButtonsReflectUndoAvailability() async {
-        let model = HighlightrEditorModel(language: "swift")
+        let model = HighlightrEditorView(language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadViewIfNeeded()
@@ -85,10 +82,9 @@ struct HighlightrEditorViewControllerToolbariOSTests {
 
     @Test
     func editMenuReflectsExternalModelChangesAfterViewSync() async {
-        let model = HighlightrEditorModel(text: "abc", language: "swift")
+        let model = HighlightrEditorView(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            model: model,
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: model,
         )
 
         controller.loadViewIfNeeded()
@@ -114,8 +110,7 @@ struct HighlightrEditorViewControllerToolbariOSTests {
     @Test
     func redoButtonAlwaysVisibleInCompactAndTracksEnabledState() async {
         let controller = HighlightrEditorViewController(
-            model: HighlightrEditorModel(language: "swift"),
-            engineFactory: { MockSyntaxHighlightingEngine() }
+            editorView: HighlightrEditorView(language: "swift"),
         )
         let container = UIViewController()
         container.addChild(controller)
@@ -164,10 +159,9 @@ struct HighlightrEditorViewControllerToolbariOSTests {
         weak var releasedController: HighlightrEditorViewController?
 
         do {
-            let model = HighlightrEditorModel(language: "swift")
+            let model = HighlightrEditorView(language: "swift")
             var controller: HighlightrEditorViewController? = HighlightrEditorViewController(
-                model: model,
-                engineFactory: { MockSyntaxHighlightingEngine() }
+                editorView: model,
             )
             controller?.loadViewIfNeeded()
             releasedController = controller

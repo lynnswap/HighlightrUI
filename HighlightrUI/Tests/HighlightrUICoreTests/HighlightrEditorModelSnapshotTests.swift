@@ -1,11 +1,11 @@
 import Testing
-@testable import HighlightrUICore
+@testable import HighlightrUI
 
 @MainActor
-struct HighlightrEditorModelMutationTests {
+struct HighlightrEditorViewMutationTests {
     @Test
     func documentModelFieldsCanBeUpdated() {
-        let model = HighlightrEditorModel(text: "start", language: "swift")
+        let model = HighlightrEditorView(text: "start", language: "swift")
 
         model.text = "updated"
         model.language = "javascript"
@@ -22,14 +22,14 @@ struct HighlightrEditorModelMutationTests {
 
     @Test
     func runtimeModelFieldsCanBeUpdated() {
-        let model = HighlightrEditorModel(language: "swift")
+        let model = HighlightrEditorView(language: "swift")
 
-        model.isFocused = true
+        model.text = "content"
+        model.isEditorFocused = true
         model.isUndoable = true
         model.isRedoable = true
-        model.hasText = true
 
-        #expect(model.isFocused)
+        #expect(model.isEditorFocused)
         #expect(model.isUndoable)
         #expect(model.isRedoable)
         #expect(model.hasText)
