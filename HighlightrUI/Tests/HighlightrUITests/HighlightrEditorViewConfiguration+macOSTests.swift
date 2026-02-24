@@ -82,6 +82,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
         await AsyncDrain.firstTurn()
         host.pump()
         #expect(view.isEditorFocused == false)
+        #expect(host.window.firstResponder !== view.platformTextView)
 
         _ = host
     }

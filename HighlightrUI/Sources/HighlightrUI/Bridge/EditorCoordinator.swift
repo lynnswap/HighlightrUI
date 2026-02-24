@@ -675,7 +675,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         var focusOverride: Bool?
         if owner.isEditorFocused {
             if !isEditorFocused {
-                let becameFocused = textView.becomeFirstResponder()
+                let becameFocused = Self.requestTextViewFocus(textView)
                 _ = becameFocused
             }
             let focusedAfterRequest = Self.isTextViewFirstResponder(textView)
@@ -683,8 +683,11 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
                 focusOverride = true
             }
         } else if isEditorFocused {
-            let resigned = textView.resignFirstResponder()
-            _ = resigned
+            _ = Self.requestTextViewBlur(textView)
+            let focusedAfterRequest = Self.isTextViewFirstResponder(textView)
+            if focusedAfterRequest {
+                focusOverride = false
+            }
         }
 
         if syncRuntimeState {
@@ -894,6 +897,20 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
 
     private static func isTextViewFirstResponder(_ textView: NSTextView) -> Bool {
         NSApplication.shared.windows.contains { $0.firstResponder === textView }
+    }
+
+    private static func requestTextViewBlur(_ textView: NSTextView) -> Bool {
+        if let window = textView.window {
+            return window.makeFirstResponder(nil)
+        }
+        return textView.resignFirstResponder()
+    }
+
+    private static func requestTextViewFocus(_ textView: NSTextView) -> Bool {
+        if let window = textView.window {
+            return window.makeFirstResponder(textView)
+        }
+        return textView.becomeFirstResponder()
     }
 
     private static func highlightRangeForEditedFlow(
