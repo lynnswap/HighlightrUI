@@ -1,6 +1,4 @@
-#if canImport(UIKit)
 import Foundation
-import UIKit
 
 @MainActor
 final class EditorCommandExecutor {
@@ -35,4 +33,3 @@ final class EditorCommandExecutor {
         )
     }
 }
-#endif
