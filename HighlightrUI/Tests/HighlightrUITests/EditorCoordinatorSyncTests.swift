@@ -137,6 +137,29 @@ struct EditorCoordinatorSyncTests {
     }
 
     @Test
+    func coordinatorReleasesWhileHighlightRenderIsSuspended() async {
+        let model = HighlightrEditorView(text: "hello", language: "swift")
+        let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
+        let engine = SuspendingSyntaxHighlightingEngine()
+        weak var weakCoordinator: EditorCoordinator?
+
+        var coordinator: EditorCoordinator? = EditorCoordinator(
+            owner: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+        weakCoordinator = coordinator
+
+        await engine.waitForRenderStart()
+        coordinator = nil
+        await AsyncDrain.firstTurn()
+
+        #expect(weakCoordinator == nil)
+        await engine.resumeRender()
+    }
+
+    @Test
     func initDoesNotOverrideCallerProvidedRuntimeFlags() {
         let model = HighlightrEditorView(text: "abc", language: "swift")
         model.isUndoable = true
@@ -291,6 +314,29 @@ struct EditorCoordinatorSyncTests {
         coordinator.syncViewFromOwner()
         #expect(engine.setLanguageCalls == ["swift", "json"])
         withExtendedLifetime(coordinator) {}
+    }
+
+    @Test
+    func coordinatorReleasesWhileHighlightRenderIsSuspended() async {
+        let model = HighlightrEditorView(text: "hello", language: "swift")
+        let textView = NSTextView(frame: .zero)
+        let engine = SuspendingSyntaxHighlightingEngine()
+        weak var weakCoordinator: EditorCoordinator?
+
+        var coordinator: EditorCoordinator? = EditorCoordinator(
+            owner: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+        weakCoordinator = coordinator
+
+        await engine.waitForRenderStart()
+        coordinator = nil
+        await AsyncDrain.firstTurn()
+
+        #expect(weakCoordinator == nil)
+        await engine.resumeRender()
     }
 
     @Test

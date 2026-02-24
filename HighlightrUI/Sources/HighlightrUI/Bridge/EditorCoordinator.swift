@@ -310,11 +310,11 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         let revision = highlightRevision
 
         highlightTask?.cancel()
+        let engine = self.engine
         highlightTask = Task { [weak self] in
-            guard let self else { return }
-
-            let payload = await self.engine.renderHighlightPayload(source: source, in: safeRange)
+            let payload = await engine.renderHighlightPayload(source: source, in: safeRange)
             guard !Task.isCancelled else { return }
+            guard let self else { return }
 
             self.applyHighlightPayload(
                 payload,
@@ -775,11 +775,11 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         let revision = highlightRevision
 
         highlightTask?.cancel()
+        let engine = self.engine
         highlightTask = Task { [weak self] in
-            guard let self else { return }
-
-            let payload = await self.engine.renderHighlightPayload(source: source, in: safeRange)
+            let payload = await engine.renderHighlightPayload(source: source, in: safeRange)
             guard !Task.isCancelled else { return }
+            guard let self else { return }
 
             self.applyHighlightPayload(
                 payload,
