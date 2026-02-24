@@ -899,15 +899,26 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         NSApplication.shared.windows.contains { $0.firstResponder === textView }
     }
 
+    private static func hostingWindow(for textView: NSTextView) -> NSWindow? {
+        if let responderWindow = NSApplication.shared.windows.first(where: { $0.firstResponder === textView }) {
+            return responderWindow
+        }
+
+        return NSApplication.shared.windows.first { window in
+            guard let contentView = window.contentView else { return false }
+            return textView.isDescendant(of: contentView)
+        }
+    }
+
     private static func requestTextViewBlur(_ textView: NSTextView) -> Bool {
-        if let window = textView.window {
+        if let window = hostingWindow(for: textView) {
             return window.makeFirstResponder(nil)
         }
         return textView.resignFirstResponder()
     }
 
     private static func requestTextViewFocus(_ textView: NSTextView) -> Bool {
-        if let window = textView.window {
+        if let window = hostingWindow(for: textView) {
             return window.makeFirstResponder(textView)
         }
         return textView.becomeFirstResponder()

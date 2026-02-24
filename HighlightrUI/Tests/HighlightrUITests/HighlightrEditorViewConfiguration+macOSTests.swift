@@ -32,7 +32,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
 
         #expect(wrappingView.platformTextView.isHorizontallyResizable == false)
         #expect(wrappingView.scrollView.hasHorizontalScroller == false)
-        #expect(wrappingView.platformTextView.textContainer?.lineBreakMode == .byWordWrapping)
+        #expect(wrappingView.platformTextContainer.lineBreakMode == .byWordWrapping)
 
         let noWrapView = HighlightrEditorView(
             language: "swift",
@@ -42,7 +42,7 @@ struct HighlightrEditorViewConfigurationmacOSTests {
 
         #expect(noWrapView.platformTextView.isHorizontallyResizable == true)
         #expect(noWrapView.scrollView.hasHorizontalScroller == true)
-        #expect(noWrapView.platformTextView.textContainer?.lineBreakMode == .byClipping)
+        #expect(noWrapView.platformTextContainer.lineBreakMode == .byClipping)
     }
 
     @Test

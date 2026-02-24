@@ -38,6 +38,8 @@ public final class HighlightrEditorView: NSView {
     @ObservationIgnored
     let platformTextView: NSTextView
     @ObservationIgnored
+    let platformTextContainer: NSTextContainer
+    @ObservationIgnored
     private var isApplyingCoordinatorState = false
 
     public init(
@@ -76,6 +78,7 @@ public final class HighlightrEditorView: NSView {
         let textContainer = NSTextContainer(
             containerSize: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         )
+        self.platformTextContainer = textContainer
         textContainer.widthTracksTextView = configuration.lineWrappingEnabled
         layoutManager.addTextContainer(textContainer)
 

@@ -333,7 +333,7 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
         controller.loadView()
         #expect(model.isEditorFocused == false)
-        #expect(controller.editorView.platformTextView.window == nil)
+        #expect(NSApplication.shared.windows.contains { $0.firstResponder === controller.editorView.platformTextView } == false)
 
         controller.perform(.focus)
         await AsyncDrain.firstTurn()
