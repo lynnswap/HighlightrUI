@@ -15,69 +15,37 @@ final class PlatformEditorTextView: UITextView {
 @MainActor
 @Observable
 public final class HighlightrEditorView: UIView {
-    public var text: String {
-        didSet { synchronizeFromOwnerState() }
-    }
-    public var language: EditorLanguage {
-        didSet { synchronizeFromOwnerState() }
-    }
-    public var theme: EditorTheme {
-        didSet { synchronizeFromOwnerState() }
-    }
-    public var selection: TextSelection {
-        didSet { synchronizeFromOwnerState() }
-    }
-    public var isEditable: Bool {
-        didSet { synchronizeFromOwnerState() }
-    }
-    public var isEditorFocused: Bool {
-        didSet { synchronizeFromOwnerState() }
-    }
-    public var isUndoable: Bool
-    public var isRedoable: Bool
-    public var hasText: Bool { !text.isEmpty }
+    public let model: HighlightrModel
 
     @ObservationIgnored
     let configuration: EditorViewConfiguration
     @ObservationIgnored
     let engine: any SyntaxHighlightingEngine
     @ObservationIgnored
-    var coordinator: EditorCoordinator!
+    let adapter: UIKitEditorAdapter
+    @ObservationIgnored
+    let session: EditorSession
     @ObservationIgnored
     let platformTextView: PlatformEditorTextView
     @ObservationIgnored
     private var styleTraitRegistration: UITraitChangeRegistration?
     @ObservationIgnored
-    private var isApplyingCoordinatorState = false
+    private var isModelObservationActive = false
 
     public init(
-        text: String = "",
-        language: EditorLanguage,
-        theme: EditorTheme = .automatic(light: "paraiso-light", dark: "paraiso-dark"),
-        selection: TextSelection = .zero,
-        isEditable: Bool = true,
-        isEditorFocused: Bool = false,
-        isUndoable: Bool = false,
-        isRedoable: Bool = false,
+        model: HighlightrModel,
         configuration: EditorViewConfiguration = .init(),
         engineFactory: @escaping @MainActor () -> any SyntaxHighlightingEngine = { HighlightrEngine() }
     ) {
-        self.text = text
-        self.language = language
-        self.theme = theme
-        self.selection = selection
-        self.isEditable = isEditable
-        self.isEditorFocused = isEditorFocused
-        self.isUndoable = isUndoable
-        self.isRedoable = isRedoable
+        self.model = model
         self.configuration = configuration
 
         let createdEngine = engineFactory()
         self.engine = createdEngine
 
         let textStorage = createdEngine.makeTextStorage(
-            initialLanguage: language,
-            initialThemeName: theme.resolvedThemeName(for: .light)
+            initialLanguage: model.language,
+            initialThemeName: model.theme.resolvedThemeName(for: .light)
         )
 
         let layoutManager = NSLayoutManager()
@@ -95,23 +63,22 @@ public final class HighlightrEditorView: UIView {
 
         let textView = PlatformEditorTextView(frame: .zero, textContainer: textContainer)
         self.platformTextView = textView
-
-        self.coordinator = nil
-
-        super.init(frame: .zero)
-
-        self.coordinator = EditorCoordinator(
-            owner: self,
-            textView: textView,
+        self.adapter = UIKitEditorAdapter(textView: textView)
+        self.session = EditorSession(
+            model: model,
+            adapter: self.adapter,
             engine: createdEngine,
             initialColorScheme: .light
         )
 
+        super.init(frame: .zero)
+
         configureTextView(textView)
         setupHierarchy()
         registerTraitChanges()
-        coordinator.applyAppearance(colorScheme: editorColorScheme(from: traitCollection.userInterfaceStyle))
-        coordinator.syncViewFromOwner(syncRuntimeState: false)
+        startModelStateSync()
+        session.applyAppearance(colorScheme: editorColorScheme(from: traitCollection.userInterfaceStyle))
+        session.syncViewFromModel(syncRuntimeState: false)
     }
 
     @available(*, unavailable)
@@ -119,17 +86,21 @@ public final class HighlightrEditorView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    isolated deinit {
+        isModelObservationActive = false
+    }
+
     public override func didMoveToWindow() {
         super.didMoveToWindow()
-        coordinator.syncViewFromOwner()
+        session.syncViewFromModel()
     }
 
     public func focus() {
-        isEditorFocused = true
+        model.isEditorFocused = true
     }
 
     public func blur() {
-        isEditorFocused = false
+        model.isEditorFocused = false
     }
 
     func setInputAccessoryView(_ view: UIView?) {
@@ -140,7 +111,7 @@ public final class HighlightrEditorView: UIView {
     }
 
     func setAutoIndentOnNewline(_ enabled: Bool) {
-        coordinator.setAutoIndentOnNewline(enabled)
+        session.setAutoIndentOnNewline(enabled)
     }
 
     private func setupHierarchy() {
@@ -165,7 +136,7 @@ public final class HighlightrEditorView: UIView {
         textView.smartInsertDeleteType = .no
         textView.spellCheckingType = .no
         textView.keyboardDismissMode = .interactive
-        textView.isEditable = isEditable
+        textView.isEditable = model.isEditable
         textView.isScrollEnabled = true
 
         if configuration.lineWrappingEnabled {
@@ -187,55 +158,36 @@ public final class HighlightrEditorView: UIView {
 
     private func registerTraitChanges() {
         styleTraitRegistration = registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: Self, _) in
-            view.coordinator.applyAppearance(
+            view.session.applyAppearance(
                 colorScheme: editorColorScheme(from: view.traitCollection.userInterfaceStyle)
             )
         }
     }
 
-    private func synchronizeFromOwnerState() {
-        guard !isApplyingCoordinatorState else { return }
-        coordinator.syncViewFromOwner()
+    private func startModelStateSync() {
+        isModelObservationActive = true
+        observeModelState()
     }
 
-    func applyPlatformDocumentState(
-        text: String,
-        selection: TextSelection,
-        isEditable: Bool
-    ) {
-        performCoordinatorMutation {
-            self.text = text
-            self.selection = selection
-            self.isEditable = isEditable
-        }
-    }
+    private func observeModelState() {
+        guard isModelObservationActive else { return }
 
-    func applyPlatformSelectionState(_ selection: TextSelection) {
-        performCoordinatorMutation {
-            self.selection = selection
+        withObservationTracking {
+            _ = model.text
+            _ = model.language
+            _ = model.theme
+            _ = model.selection
+            _ = model.isEditable
+            _ = model.isEditorFocused
+            _ = model.isUndoable
+            _ = model.isRedoable
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self, self.isModelObservationActive else { return }
+                self.session.syncViewFromModel()
+                self.observeModelState()
+            }
         }
-    }
-
-    func applyPlatformRuntimeState(
-        isEditorFocused: Bool,
-        isUndoable: Bool,
-        isRedoable: Bool
-    ) {
-        performCoordinatorMutation {
-            self.isEditorFocused = isEditorFocused
-            self.isUndoable = isUndoable
-            self.isRedoable = isRedoable
-        }
-    }
-
-    private func performCoordinatorMutation(_ updates: () -> Void) {
-        guard !isApplyingCoordinatorState else {
-            updates()
-            return
-        }
-        isApplyingCoordinatorState = true
-        updates()
-        isApplyingCoordinatorState = false
     }
 }
 #endif

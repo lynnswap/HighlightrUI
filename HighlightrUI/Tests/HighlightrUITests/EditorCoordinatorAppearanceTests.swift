@@ -5,39 +5,34 @@ import Testing
 import UIKit
 
 @MainActor
-struct EditorCoordinatorAppearanceTests {
+struct EditorSessionAppearanceTests {
     @Test
     func themeApplyDeduplicatesRepeatedValues() async {
-        let model = HighlightrEditorView(text: "", language: "swift")
+        let model = HighlightrModel(text: "", language: "swift")
         let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
         let engine = MockSyntaxHighlightingEngine()
-        let coordinator = EditorCoordinator(
-            owner: model,
-            textView: textView,
-            engine: engine,
-            initialColorScheme: .light
-        )
+        let coordinator = makeEditorSession(model: model, textView: textView, engine: engine)
 
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
 
         model.theme = .automatic(light: "paraiso-light", dark: "paraiso-dark")
-        coordinator.syncViewFromOwner()
+        coordinator.syncViewFromModel()
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
 
         model.theme = .named("github")
-        coordinator.syncViewFromOwner()
+        coordinator.syncViewFromModel()
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
 
         model.theme = .named("github")
-        coordinator.syncViewFromOwner()
+        coordinator.syncViewFromModel()
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
         withExtendedLifetime(coordinator) {}
     }
 
     @Test
     func applyAppearanceForcesAutomaticThemeReapply() async {
-        let model = HighlightrEditorView(
+        let model = HighlightrModel(
             text: "",
             language: "swift",
             theme: .automatic(light: "paraiso-light", dark: "paraiso-dark")
@@ -45,12 +40,7 @@ struct EditorCoordinatorAppearanceTests {
 
         let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
         let engine = MockSyntaxHighlightingEngine()
-        let coordinator = EditorCoordinator(
-            owner: model,
-            textView: textView,
-            engine: engine,
-            initialColorScheme: .light
-        )
+        let coordinator = makeEditorSession(model: model, textView: textView, engine: engine)
 
         await AsyncDrain.firstTurn()
         coordinator.applyAppearance(colorScheme: .dark)
@@ -67,39 +57,34 @@ struct EditorCoordinatorAppearanceTests {
 import AppKit
 
 @MainActor
-struct EditorCoordinatorAppearanceTests {
+struct EditorSessionAppearanceTests {
     @Test
     func themeApplyDeduplicatesRepeatedValues() async {
-        let model = HighlightrEditorView(text: "", language: "swift")
+        let model = HighlightrModel(text: "", language: "swift")
         let textView = NSTextView(frame: .zero)
         let engine = MockSyntaxHighlightingEngine()
-        let coordinator = EditorCoordinator(
-            owner: model,
-            textView: textView,
-            engine: engine,
-            initialColorScheme: .light
-        )
+        let coordinator = makeEditorSession(model: model, textView: textView, engine: engine)
 
         await AsyncDrain.firstTurn()
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
 
         model.theme = .automatic(light: "paraiso-light", dark: "paraiso-dark")
-        coordinator.syncViewFromOwner()
+        coordinator.syncViewFromModel()
         #expect(engine.setThemeNameCalls == ["paraiso-light"])
 
         model.theme = .named("github")
-        coordinator.syncViewFromOwner()
+        coordinator.syncViewFromModel()
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
 
         model.theme = .named("github")
-        coordinator.syncViewFromOwner()
+        coordinator.syncViewFromModel()
         #expect(engine.setThemeNameCalls == ["paraiso-light", "github"])
         withExtendedLifetime(coordinator) {}
     }
 
     @Test
     func applyAppearanceForcesAutomaticThemeReapply() async {
-        let model = HighlightrEditorView(
+        let model = HighlightrModel(
             text: "",
             language: "swift",
             theme: .automatic(light: "paraiso-light", dark: "paraiso-dark")
@@ -107,12 +92,7 @@ struct EditorCoordinatorAppearanceTests {
 
         let textView = NSTextView(frame: .zero)
         let engine = MockSyntaxHighlightingEngine()
-        let coordinator = EditorCoordinator(
-            owner: model,
-            textView: textView,
-            engine: engine,
-            initialColorScheme: .light
-        )
+        let coordinator = makeEditorSession(model: model, textView: textView, engine: engine)
 
         await AsyncDrain.firstTurn()
         coordinator.applyAppearance(colorScheme: .dark)

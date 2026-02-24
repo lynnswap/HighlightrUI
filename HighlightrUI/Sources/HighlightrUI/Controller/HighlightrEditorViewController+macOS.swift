@@ -5,6 +5,7 @@ import Observation
 @MainActor
 @Observable
 public final class HighlightrEditorViewController: NSViewController {
+    public let model: HighlightrModel
     public let editorView: HighlightrEditorView
 
     @ObservationIgnored
@@ -13,27 +14,13 @@ public final class HighlightrEditorViewController: NSViewController {
     private let configuration: HighlightrEditorViewControllerConfiguration
 
     public convenience init(
-        text: String = "",
-        language: EditorLanguage,
-        theme: EditorTheme = .automatic(light: "paraiso-light", dark: "paraiso-dark"),
-        selection: TextSelection = .zero,
-        isEditable: Bool = true,
-        isEditorFocused: Bool = false,
-        isUndoable: Bool = false,
-        isRedoable: Bool = false,
+        model: HighlightrModel,
         viewConfiguration: EditorViewConfiguration = .init(),
         controllerConfiguration: HighlightrEditorViewControllerConfiguration = .init(),
         engineFactory: @escaping @MainActor () -> any SyntaxHighlightingEngine = { HighlightrEngine() }
     ) {
         let editorView = HighlightrEditorView(
-            text: text,
-            language: language,
-            theme: theme,
-            selection: selection,
-            isEditable: isEditable,
-            isEditorFocused: isEditorFocused,
-            isUndoable: isUndoable,
-            isRedoable: isRedoable,
+            model: model,
             configuration: viewConfiguration,
             engineFactory: engineFactory
         )
@@ -44,6 +31,7 @@ public final class HighlightrEditorViewController: NSViewController {
         editorView: HighlightrEditorView,
         configuration: HighlightrEditorViewControllerConfiguration = .init()
     ) {
+        self.model = editorView.model
         self.editorView = editorView
         self.commandExecutor = EditorCommandExecutor(editorView: editorView)
         self.configuration = configuration

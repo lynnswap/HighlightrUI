@@ -1,37 +1,49 @@
-# Migration Guide (v1 -> v2)
+# Migration Guide (v2 -> v3)
 
-This guide summarizes breaking changes introduced in HighlightrUI v2.
+This guide summarizes breaking changes introduced in HighlightrUI v3.
 
 ## Overview
 
-- `HighlightrEditorModel` is removed.
-- `HighlightrUICore` is removed and merged into `HighlightrUI`.
-- Internal stream synchronization (`ObservationsCompat`) is removed.
-- `HighlightrEditorView` is now the single state owner (`@Observable`).
-- `HighlightrEditorViewController` manages commands/toolbar and references `editorView`.
+- Public state owner is `HighlightrModel` (`@Observable`) with a single flat property set.
+- `HighlightrEditorView` / `HighlightrEditorViewController` now require injected `HighlightrModel`.
+- Legacy direct initializers (`text:language:...`) were removed from public API.
+- `EditorCoordinator` was removed and replaced by internal `EditorSession` + `HighlightPipeline`.
+- Command interpretation moved to internal `EditorCommandService`.
 
 ## API Mapping
 
-- `HighlightrEditorView(model: ...)` -> `HighlightrEditorView(text:language:theme:selection:isEditable:isEditorFocused:isUndoable:isRedoable:...)`
-- `HighlightrEditorViewController(model: ...)` -> `HighlightrEditorViewController(text:language:...)` or `HighlightrEditorViewController(editorView: ...)`
-- `import HighlightrUICore` -> `import HighlightrUI`
+- `HighlightrEditorView(text:language:...)`
+  -> `HighlightrEditorView(model: HighlightrModel(text:language:...))`
+- `HighlightrEditorViewController(text:language:...)`
+  -> `HighlightrEditorViewController(model: ...)`
+- `HighlightrEditorViewController(editorView: ...)`
+  -> `HighlightrEditorViewController(model: editorView.model)`
 
-## State Model
+## New State Model
 
-State now lives on `HighlightrEditorView`:
+```swift
+let model = HighlightrModel(
+    text: "print(\"hello\")",
+    language: "swift",
+    theme: .automatic(light: "paraiso-light", dark: "paraiso-dark"),
+    selection: .zero,
+    isEditable: true,
+    isEditorFocused: false,
+    isUndoable: false,
+    isRedoable: false
+)
+```
 
-- Document state: `text`, `language`, `theme`, `selection`, `isEditable`
-- Runtime state: `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`
+Update state directly on `model` properties (`model.text`, `model.theme`, etc.).
 
-`hasText` is now derived from `text` and is no longer independently mutable.
+## Removed Public APIs
 
-## Removed APIs
-
-- `HighlightrEditorModel`
-- `HighlightrUICore` product/target
-- `ObservationsCompat`-based editor state streams
+- `HighlightrDocumentModel`
+- `HighlightrRuntimeModel`
+- `HighlightrEditorView` document/runtime mirror properties (`text`, `language`, `theme`, `selection`, `isEditable`, `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`)
+- Public convenience initializers based on `text/language/...`
+- `EditorCoordinator` public usage
 
 ## Notes
 
-- This release is intentionally breaking and does not include compatibility shims.
-- App code should read/write state through `HighlightrEditorView`.
+- This release is intentionally breaking and does not include public compatibility shims.

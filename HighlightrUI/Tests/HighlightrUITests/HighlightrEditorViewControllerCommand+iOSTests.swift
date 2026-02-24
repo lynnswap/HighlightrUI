@@ -9,9 +9,9 @@ import UIKit
 struct HighlightrEditorViewControllerCommandiOSTests {
     @Test
     func insertPairWrapsSelectionAndKeepsModelSynchronized() async {
-        let model = HighlightrEditorView(text: "abc", language: "swift")
+        let model = HighlightrModel(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -28,9 +28,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func insertCurlyBracesWrapsSelectionAndKeepsSelectedText() async {
-        let model = HighlightrEditorView(text: "value", language: "swift")
+        let model = HighlightrModel(text: "value", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -47,9 +47,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func insertCommandsAtEndKeepCursorAtExpectedPosition() async {
-        let model = HighlightrEditorView(text: "abc", language: "swift")
+        let model = HighlightrModel(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -73,9 +73,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func undoAndRedoCommandsOperateThroughController() async {
-        let model = HighlightrEditorView(text: "", language: "swift")
+        let model = HighlightrModel(text: "", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -96,9 +96,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func undoAndRedoAreBlockedWhenModelIsReadOnly() async {
-        let model = HighlightrEditorView(text: "abc", language: "swift")
+        let model = HighlightrModel(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -122,9 +122,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func deleteCurrentLineAndClearTextCommandsWork() async {
-        let model = HighlightrEditorView(text: "a\nb\nc", language: "swift")
+        let model = HighlightrModel(text: "a\nb\nc", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -142,9 +142,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func deleteCurrentLineAtEOFRemovesTrailingBlankLine() async {
-        let model = HighlightrEditorView(text: "a\n", language: "swift")
+        let model = HighlightrModel(text: "a\n", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -161,9 +161,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func clearAndDeleteCommandsRemainAvailableBeforeViewSync() async {
-        let model = HighlightrEditorView(text: "", language: "swift")
+        let model = HighlightrModel(text: "", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -173,7 +173,6 @@ struct HighlightrEditorViewControllerCommandiOSTests {
         #expect(!controller.canPerform(.deleteCurrentLine))
 
         model.text = "line"
-        #expect(textView.text == "line")
         #expect(controller.canPerform(.clearText))
         #expect(controller.canPerform(.deleteCurrentLine))
 
@@ -193,9 +192,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func deleteCurrentLineUsesLatestModelTextBeforeViewSync() async {
-        let model = HighlightrEditorView(text: "old\nline", language: "swift")
+        let model = HighlightrModel(text: "old\nline", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -204,7 +203,6 @@ struct HighlightrEditorViewControllerCommandiOSTests {
         #expect(textView.text == "old\nline")
 
         model.text = "new"
-        #expect(textView.text == "new")
         #expect(controller.canPerform(.deleteCurrentLine))
 
         controller.perform(.deleteCurrentLine)
@@ -216,9 +214,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func insertIndentUsesLatestModelTextBeforeViewSync() async {
-        let model = HighlightrEditorView(text: "old", language: "swift")
+        let model = HighlightrModel(text: "old", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -227,7 +225,6 @@ struct HighlightrEditorViewControllerCommandiOSTests {
         #expect(textView.text == "old")
 
         model.text = "new"
-        #expect(textView.text == "new")
 
         controller.perform(.insertIndent)
         await AsyncDrain.firstTurn()
@@ -238,9 +235,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func insertIndentUsesLatestModelSelectionBeforeViewSync() async {
-        let model = HighlightrEditorView(text: "abc", language: "swift")
+        let model = HighlightrModel(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -249,7 +246,6 @@ struct HighlightrEditorViewControllerCommandiOSTests {
         #expect(textView.selectedRange == NSRange(location: 0, length: 0))
 
         model.selection = TextSelection(location: 3, length: 0)
-        #expect(textView.selectedRange == NSRange(location: 3, length: 0))
 
         controller.perform(.insertIndent)
         await AsyncDrain.firstTurn()
@@ -262,9 +258,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func undoUsesLatestModelTextBeforeViewSync() async {
-        let model = HighlightrEditorView(text: "old", language: "swift")
+        let model = HighlightrModel(text: "old", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -278,7 +274,6 @@ struct HighlightrEditorViewControllerCommandiOSTests {
         #expect(controller.canPerform(.undo))
 
         model.text = "new"
-        #expect(textView.text == "new")
 
         controller.perform(.undo)
         await AsyncDrain.firstTurn()
@@ -289,9 +284,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func redoUsesLatestModelTextBeforeViewSync() async {
-        let model = HighlightrEditorView(text: "old", language: "swift")
+        let model = HighlightrModel(text: "old", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -307,7 +302,6 @@ struct HighlightrEditorViewControllerCommandiOSTests {
         #expect(controller.canPerform(.redo))
 
         model.text = "new"
-        #expect(textView.text == "new")
 
         controller.perform(.redo)
         await AsyncDrain.firstTurn()
@@ -318,9 +312,9 @@ struct HighlightrEditorViewControllerCommandiOSTests {
 
     @Test
     func focusCommandBeforeWindowAttachPreservesPendingFocusRequest() async {
-        let model = HighlightrEditorView(text: "abc", language: "swift")
+        let model = HighlightrModel(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()

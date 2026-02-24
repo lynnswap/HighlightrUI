@@ -11,13 +11,13 @@ import HighlightrUI
 struct ContentView: View {
     @State private var selectedSnippet: DemoSnippet = .swiftPackage
     @State private var isSettingsPresented = false
-    @State private var editorView: HighlightrEditorView?
+    @State private var model: HighlightrModel?
 
     var body: some View {
-        if let editorView{
+        if let model {
             NavigationStack {
                 VStack(spacing: 12) {
-                    EditorHostView(editorView: editorView)
+                    EditorHostView(model: model)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background {
                             Rectangle().fill(.ultraThinMaterial)
@@ -27,14 +27,14 @@ struct ContentView: View {
 
                     HStack {
                         Label(
-                            DemoLanguage.title(for: editorView.language),
+                            DemoLanguage.title(for: model.language),
                             systemImage: "curlybraces"
                         )
                         .accessibilityIdentifier("status.language")
                         Spacer()
                         Label(
-                            editorView.isEditable ? "Editable" : "Read Only",
-                            systemImage: editorView.isEditable ? "pencil" : "lock"
+                            model.isEditable ? "Editable" : "Read Only",
+                            systemImage: model.isEditable ? "pencil" : "lock"
                         )
                         .accessibilityIdentifier("status.editable")
                     }
@@ -70,17 +70,17 @@ struct ContentView: View {
             .sheet(isPresented: $isSettingsPresented) {
                 EditorSettingsSheet(
                     selectedSnippet: $selectedSnippet,
-                    editorView: editorView
+                    model: model
                 )
             }
             .onChange(of: selectedSnippet, initial: true) {
-                editorView.text = selectedSnippet.code
-                editorView.language = selectedSnippet.language.editorLanguage
+                model.text = selectedSnippet.code
+                model.language = selectedSnippet.language.editorLanguage
             }
-        }else{
+        } else {
             Color.clear
-                .onAppear(){
-                    self.editorView = HighlightrEditorView(
+                .onAppear {
+                    self.model = HighlightrModel(
                         text: DemoSnippet.swiftPackage.code,
                         language: DemoSnippet.swiftPackage.language.editorLanguage
                     )

@@ -5,7 +5,7 @@ import Testing
 struct HighlightrEditorViewMutationTests {
     @Test
     func documentModelFieldsCanBeUpdated() {
-        let model = HighlightrEditorView(text: "start", language: "swift")
+        let model = HighlightrModel(text: "start", language: "swift")
 
         model.text = "updated"
         model.language = "javascript"
@@ -22,7 +22,7 @@ struct HighlightrEditorViewMutationTests {
 
     @Test
     func runtimeModelFieldsCanBeUpdated() {
-        let model = HighlightrEditorView(language: "swift")
+        let model = HighlightrModel(language: "swift")
 
         model.text = "content"
         model.isEditorFocused = true
