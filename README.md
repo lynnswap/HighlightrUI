@@ -51,30 +51,6 @@ On iOS, `HighlightrEditorViewController` includes a built-in fixed coding keyboa
 
 Read/update those properties directly on `HighlightrEditorView` (or via `controller.editorView`).
 
-## Testing
-
-Run tests with `xcodebuild` from the repository root.
-
-```bash
-# macOS: Package tests
-xcodebuild -workspace HighlightrUI.xcworkspace \
-  -scheme HighlightrUITests \
-  -destination 'platform=macOS' \
-  test
-
-# iOS Simulator: Package tests
-xcodebuild -workspace HighlightrUI.xcworkspace \
-  -scheme HighlightrUITests \
-  -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
-  test
-```
-
-If the destination does not exist on your machine, check available simulators with:
-
-```bash
-xcrun simctl list devices available
-```
-
 ## Migration
 
 See [`Migration`](Docs/Migration.md).
