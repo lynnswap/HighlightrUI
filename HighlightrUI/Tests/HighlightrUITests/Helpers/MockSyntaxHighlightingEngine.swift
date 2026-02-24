@@ -42,7 +42,9 @@ final class MockSyntaxHighlightingEngine: SyntaxHighlightingEngine {
 
 private actor SuspendedRenderGate {
     private var didStart = false
+    private var didCancel = false
     private var startContinuations: [CheckedContinuation<Void, Never>] = []
+    private var cancellationContinuations: [CheckedContinuation<Void, Never>] = []
     private var pendingResultContinuation: CheckedContinuation<HighlightRenderPayload?, Never>?
 
     func markStarted() {
@@ -58,6 +60,25 @@ private actor SuspendedRenderGate {
         await withCheckedContinuation { continuation in
             startContinuations.append(continuation)
         }
+    }
+
+    func markCancelled() {
+        didCancel = true
+        for continuation in cancellationContinuations {
+            continuation.resume()
+        }
+        cancellationContinuations.removeAll()
+    }
+
+    func waitForCancellation() async {
+        guard !didCancel else { return }
+        await withCheckedContinuation { continuation in
+            cancellationContinuations.append(continuation)
+        }
+    }
+
+    func isCancelled() -> Bool {
+        didCancel
     }
 
     func waitForResult() async -> HighlightRenderPayload? {
@@ -93,8 +114,15 @@ final class SuspendingSyntaxHighlightingEngine: SyntaxHighlightingEngine {
     func setThemeName(_ themeName: String) {}
 
     func renderHighlightPayload(source: String, in range: NSRange) async -> HighlightRenderPayload? {
+        let gate = self.gate
         await gate.markStarted()
-        return await gate.waitForResult()
+        return await withTaskCancellationHandler {
+            await gate.waitForResult()
+        } onCancel: {
+            Task {
+                await gate.markCancelled()
+            }
+        }
     }
 
     func waitForRenderStart() async {
@@ -103,5 +131,13 @@ final class SuspendingSyntaxHighlightingEngine: SyntaxHighlightingEngine {
 
     func resumeRender(with payload: HighlightRenderPayload? = nil) async {
         await gate.resume(with: payload)
+    }
+
+    func waitForRenderCancellation() async {
+        await gate.waitForCancellation()
+    }
+
+    func isRenderCancelled() async -> Bool {
+        await gate.isCancelled()
     }
 }

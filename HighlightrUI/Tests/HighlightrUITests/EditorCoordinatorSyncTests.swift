@@ -160,6 +160,29 @@ struct EditorCoordinatorSyncTests {
     }
 
     @Test
+    func emptyTextCancelsInFlightHighlightRender() async {
+        let model = HighlightrEditorView(text: "hello", language: "swift")
+        let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
+        let engine = SuspendingSyntaxHighlightingEngine()
+        let coordinator = EditorCoordinator(
+            owner: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+
+        await engine.waitForRenderStart()
+        textView.text = ""
+        coordinator.textViewDidChange(textView)
+
+        let wasCancelled = await waitForRenderCancellation(of: engine)
+        #expect(wasCancelled)
+
+        await engine.resumeRender()
+        withExtendedLifetime(coordinator) {}
+    }
+
+    @Test
     func initDoesNotOverrideCallerProvidedRuntimeFlags() {
         let model = HighlightrEditorView(text: "abc", language: "swift")
         model.isUndoable = true
@@ -179,6 +202,15 @@ struct EditorCoordinatorSyncTests {
         withExtendedLifetime(coordinator) {}
     }
 
+    private func waitForRenderCancellation(of engine: SuspendingSyntaxHighlightingEngine) async -> Bool {
+        for _ in 0 ..< 10 {
+            if await engine.isRenderCancelled() {
+                return true
+            }
+            await AsyncDrain.shortDelay()
+        }
+        return false
+    }
 }
 
 #elseif canImport(AppKit)
@@ -340,6 +372,29 @@ struct EditorCoordinatorSyncTests {
     }
 
     @Test
+    func emptyTextCancelsInFlightHighlightRender() async {
+        let model = HighlightrEditorView(text: "hello", language: "swift")
+        let textView = NSTextView(frame: .zero)
+        let engine = SuspendingSyntaxHighlightingEngine()
+        let coordinator = EditorCoordinator(
+            owner: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+
+        await engine.waitForRenderStart()
+        textView.string = ""
+        coordinator.textDidChange(Notification(name: NSText.didChangeNotification, object: textView))
+
+        let wasCancelled = await waitForRenderCancellation(of: engine)
+        #expect(wasCancelled)
+
+        await engine.resumeRender()
+        withExtendedLifetime(coordinator) {}
+    }
+
+    @Test
     func initDoesNotOverrideCallerProvidedRuntimeFlags() {
         let model = HighlightrEditorView(text: "abc", language: "swift")
         model.isUndoable = true
@@ -391,6 +446,16 @@ struct EditorCoordinatorSyncTests {
         #expect(model.isUndoable == (textView.undoManager?.canUndo ?? false))
         #expect(model.isRedoable == (textView.undoManager?.canRedo ?? false))
         withExtendedLifetime(coordinator) {}
+    }
+
+    private func waitForRenderCancellation(of engine: SuspendingSyntaxHighlightingEngine) async -> Bool {
+        for _ in 0 ..< 10 {
+            if await engine.isRenderCancelled() {
+                return true
+            }
+            await AsyncDrain.shortDelay()
+        }
+        return false
     }
 }
 #endif

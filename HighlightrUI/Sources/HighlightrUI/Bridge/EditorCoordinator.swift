@@ -278,6 +278,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         let textStorage = textView.textStorage
         let source = textStorage.string
         guard !source.isEmpty else {
+            highlightTask?.cancel()
             pendingEditedRange = nil
             pendingOriginalUTF16Length = nil
             pendingReplacementUTF16Length = nil
@@ -602,7 +603,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         let safeRange = Self.clampedRange(range, in: textView.string)
         if safeRange.length == 0 {
             let inheritedTypingAttributes = Self.inheritedTypingAttributes(
-                from: textView.attributedString(),
+                from: unsafe textView.textStorage,
                 insertionLocation: safeRange.location,
                 fallbackFont: textView.font
             )
@@ -743,6 +744,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     private func scheduleHighlightForPendingEdit(in textView: NSTextView) {
         let source = textView.string
         guard !source.isEmpty else {
+            highlightTask?.cancel()
             pendingEditedRange = nil
             pendingOriginalUTF16Length = nil
             pendingReplacementUTF16Length = nil
@@ -943,31 +945,27 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     }
 
     private static func inheritedTypingAttributes(
-        from attributedString: NSAttributedString,
+        from textStorage: NSTextStorage?,
         insertionLocation: Int,
         fallbackFont: NSFont?
     ) -> [NSAttributedString.Key: Any] {
-        let snapshot = AttributedString(attributedString)
-        let source = String(snapshot.characters)
-        let utf16Length = (source as NSString).length
-        guard utf16Length > 0 else { return [:] }
+        guard let textStorage, textStorage.length > 0 else { return [:] }
 
-        let probeLocation = min(max(0, insertionLocation - 1), utf16Length - 1)
-        for run in snapshot.runs {
-            guard let swiftRange = Range(run.range, in: source) else { continue }
-            let runRange = NSRange(swiftRange, in: source)
-            guard NSLocationInRange(probeLocation, runRange) else { continue }
+        let probeLocation = min(max(0, insertionLocation - 1), textStorage.length - 1)
+        let runAttributes = unsafe textStorage.attributes(at: probeLocation, effectiveRange: nil)
 
-            var attributes: [NSAttributedString.Key: Any] = [:]
-            if let foregroundColor = run.attributes[AttributeScopes.AppKitAttributes.ForegroundColorAttribute.self] {
-                attributes[.foregroundColor] = foregroundColor
-            }
-            if let backgroundColor = run.attributes[AttributeScopes.AppKitAttributes.BackgroundColorAttribute.self] {
-                attributes[.backgroundColor] = backgroundColor
-            }
-            if let fallbackFont {
-                attributes[.font] = fallbackFont
-            }
+        var attributes: [NSAttributedString.Key: Any] = [:]
+        if let foregroundColor = runAttributes[.foregroundColor] {
+            attributes[.foregroundColor] = foregroundColor
+        }
+        if let backgroundColor = runAttributes[.backgroundColor] {
+            attributes[.backgroundColor] = backgroundColor
+        }
+        if let fallbackFont {
+            attributes[.font] = fallbackFont
+        }
+
+        if !attributes.isEmpty {
             return attributes
         }
 
