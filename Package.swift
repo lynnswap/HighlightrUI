@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "HighlightrUI",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v18),
         .macOS(.v15),
@@ -24,6 +25,9 @@ let package = Package(
                 .product(name: "Highlightr", package: "Highlightr"),
             ],
             path: "HighlightrUI/Sources/HighlightrUI",
+            resources: [
+                .process("Localizable.xcstrings"),
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
             ]

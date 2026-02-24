@@ -182,12 +182,12 @@ public final class HighlightrEditorViewController: UIViewController {
             title: "",
             children: [
                 makeMenuAction(
-                    title: "Delete Current Line",
+                    title: highlightrLocalized("editor.menu.deleteCurrentLine"),
                     imageSystemName: "delete.left",
                     command: .deleteCurrentLine
                 ),
                 makeMenuAction(
-                    title: "Clear Text",
+                    title: highlightrLocalized("editor.menu.clearText"),
                     imageSystemName: "eraser",
                     attributes: .destructive,
                     command: .clearText

@@ -35,7 +35,11 @@ struct HighlightrEditorViewControllerToolbariOSTests {
         #expect(editItem?.menu != nil)
         let editActionTitles = editItem?.menu?.children
             .compactMap { ($0 as? UIAction)?.title } ?? []
-        #expect(editActionTitles == ["Delete Current Line", "Clear Text"])
+        let expectedEditActionTitles = [
+            highlightrLocalized("editor.menu.deleteCurrentLine"),
+            highlightrLocalized("editor.menu.clearText"),
+        ]
+        #expect(editActionTitles == expectedEditActionTitles)
     }
 
     @Test
