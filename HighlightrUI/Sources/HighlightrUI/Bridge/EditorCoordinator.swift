@@ -24,6 +24,11 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     private var pendingReplacementUTF16Length: Int?
     private var isApplyingHighlightAttributes = false
 
+    private enum HighlightRequestScope {
+        case fullDocument
+        case editedRange(NSRange)
+    }
+
     init(
         owner: HighlightrEditorView,
         textView: UITextView,
@@ -41,7 +46,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
     }
 
     isolated deinit {
-        highlightTask?.cancel()
+        cancelHighlightPipeline(resetPendingEditState: false)
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
@@ -265,52 +270,65 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         guard let textView else { return }
         let textStorage = textView.textStorage
         let source = textStorage.string
-        let length = (source as NSString).length
-        guard length > 0 else { return }
-
-        scheduleHighlight(
-            source: source,
-            range: NSRange(location: 0, length: length)
-        )
+        scheduleHighlightRequest(source: source, scope: .fullDocument)
     }
 
     private func scheduleHighlightForPendingEdit(in textView: UITextView) {
         let textStorage = textView.textStorage
         let source = textStorage.string
-        guard !source.isEmpty else {
-            highlightTask?.cancel()
-            pendingEditedRange = nil
-            pendingOriginalUTF16Length = nil
-            pendingReplacementUTF16Length = nil
-            return
-        }
-
         let editedRange = consumePendingEditedRange(
             fallbackSelection: textView.selectedRange,
             text: source
         )
+        scheduleHighlightRequest(source: source, scope: .editedRange(editedRange))
+    }
+
+    private func scheduleHighlightRequest(source: String, scope: HighlightRequestScope) {
         let sourceUTF16 = source as NSString
-        let highlightRange = Self.highlightRangeForEditedFlow(
-            editedRange,
-            in: sourceUTF16
-        )
-        scheduleHighlight(
-            source: source,
-            range: highlightRange
-        )
+        guard sourceUTF16.length > 0 else {
+            cancelHighlightPipeline(resetPendingEditState: true)
+            return
+        }
+
+        let requestedRange: NSRange
+        switch scope {
+        case .fullDocument:
+            requestedRange = NSRange(location: 0, length: sourceUTF16.length)
+        case .editedRange(let editedRange):
+            let clampedEditedRange = Self.clampedRange(editedRange, utf16Length: sourceUTF16.length)
+            requestedRange = Self.highlightRangeForEditedFlow(clampedEditedRange, in: sourceUTF16)
+        }
+
+        scheduleHighlight(source: source, range: requestedRange)
+    }
+
+    private func cancelHighlightPipeline(resetPendingEditState: Bool) {
+        highlightTask?.cancel()
+        if resetPendingEditState {
+            clearPendingEditState()
+        }
+    }
+
+    private func clearPendingEditState() {
+        pendingEditedRange = nil
+        pendingOriginalUTF16Length = nil
+        pendingReplacementUTF16Length = nil
     }
 
     private func scheduleHighlight(source: String, range: NSRange) {
         let sourceUTF16 = source as NSString
         let safeRange = Self.clampedRange(range, utf16Length: sourceUTF16.length)
-        guard safeRange.length > 0 else { return }
+        guard safeRange.length > 0 else {
+            cancelHighlightPipeline(resetPendingEditState: false)
+            return
+        }
 
         let expectedSource = sourceUTF16.substring(with: safeRange)
 
         highlightRevision &+= 1
         let revision = highlightRevision
 
-        highlightTask?.cancel()
+        cancelHighlightPipeline(resetPendingEditState: false)
         let engine = self.engine
         highlightTask = Task { [weak self] in
             let payload = await engine.renderHighlightPayload(source: source, in: safeRange)
@@ -525,6 +543,11 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     private var pendingReplacementUTF16Length: Int?
     private var isApplyingHighlightAttributes = false
 
+    private enum HighlightRequestScope {
+        case fullDocument
+        case editedRange(NSRange)
+    }
+
     init(
         owner: HighlightrEditorView,
         textView: NSTextView,
@@ -542,7 +565,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     }
 
     isolated deinit {
-        highlightTask?.cancel()
+        cancelHighlightPipeline(resetPendingEditState: false)
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
@@ -732,51 +755,64 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     private func scheduleFullHighlightIfPossible() {
         guard let textView else { return }
         let source = textView.string
-        let length = (source as NSString).length
-        guard length > 0 else { return }
-
-        scheduleHighlight(
-            source: source,
-            range: NSRange(location: 0, length: length)
-        )
+        scheduleHighlightRequest(source: source, scope: .fullDocument)
     }
 
     private func scheduleHighlightForPendingEdit(in textView: NSTextView) {
         let source = textView.string
-        guard !source.isEmpty else {
-            highlightTask?.cancel()
-            pendingEditedRange = nil
-            pendingOriginalUTF16Length = nil
-            pendingReplacementUTF16Length = nil
-            return
-        }
-
         let editedRange = consumePendingEditedRange(
             fallbackSelection: textView.selectedRange(),
             text: source
         )
+        scheduleHighlightRequest(source: source, scope: .editedRange(editedRange))
+    }
+
+    private func scheduleHighlightRequest(source: String, scope: HighlightRequestScope) {
         let sourceUTF16 = source as NSString
-        let highlightRange = Self.highlightRangeForEditedFlow(
-            editedRange,
-            in: sourceUTF16
-        )
-        scheduleHighlight(
-            source: source,
-            range: highlightRange
-        )
+        guard sourceUTF16.length > 0 else {
+            cancelHighlightPipeline(resetPendingEditState: true)
+            return
+        }
+
+        let requestedRange: NSRange
+        switch scope {
+        case .fullDocument:
+            requestedRange = NSRange(location: 0, length: sourceUTF16.length)
+        case .editedRange(let editedRange):
+            let clampedEditedRange = Self.clampedRange(editedRange, utf16Length: sourceUTF16.length)
+            requestedRange = Self.highlightRangeForEditedFlow(clampedEditedRange, in: sourceUTF16)
+        }
+
+        scheduleHighlight(source: source, range: requestedRange)
+    }
+
+    private func cancelHighlightPipeline(resetPendingEditState: Bool) {
+        highlightTask?.cancel()
+        if resetPendingEditState {
+            clearPendingEditState()
+        }
+    }
+
+    private func clearPendingEditState() {
+        pendingEditedRange = nil
+        pendingOriginalUTF16Length = nil
+        pendingReplacementUTF16Length = nil
     }
 
     private func scheduleHighlight(source: String, range: NSRange) {
         let sourceUTF16 = source as NSString
         let safeRange = Self.clampedRange(range, utf16Length: sourceUTF16.length)
-        guard safeRange.length > 0 else { return }
+        guard safeRange.length > 0 else {
+            cancelHighlightPipeline(resetPendingEditState: false)
+            return
+        }
 
         let expectedSource = sourceUTF16.substring(with: safeRange)
 
         highlightRevision &+= 1
         let revision = highlightRevision
 
-        highlightTask?.cancel()
+        cancelHighlightPipeline(resetPendingEditState: false)
         let engine = self.engine
         highlightTask = Task { [weak self] in
             let payload = await engine.renderHighlightPayload(source: source, in: safeRange)

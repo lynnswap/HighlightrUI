@@ -183,6 +183,30 @@ struct EditorCoordinatorSyncTests {
     }
 
     @Test
+    func ownerSyncToEmptyTextCancelsInFlightFullHighlightRender() async {
+        let model = HighlightrEditorView(text: "hello", language: "swift")
+        let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
+        let engine = SuspendingSyntaxHighlightingEngine()
+        let coordinator = EditorCoordinator(
+            owner: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+
+        await engine.waitForRenderStart()
+
+        model.text = ""
+        coordinator.syncViewFromOwner()
+
+        let wasCancelled = await waitForRenderCancellation(of: engine)
+        #expect(wasCancelled)
+
+        await engine.resumeRender()
+        withExtendedLifetime(coordinator) {}
+    }
+
+    @Test
     func initDoesNotOverrideCallerProvidedRuntimeFlags() {
         let model = HighlightrEditorView(text: "abc", language: "swift")
         model.isUndoable = true
@@ -386,6 +410,30 @@ struct EditorCoordinatorSyncTests {
         await engine.waitForRenderStart()
         textView.string = ""
         coordinator.textDidChange(Notification(name: NSText.didChangeNotification, object: textView))
+
+        let wasCancelled = await waitForRenderCancellation(of: engine)
+        #expect(wasCancelled)
+
+        await engine.resumeRender()
+        withExtendedLifetime(coordinator) {}
+    }
+
+    @Test
+    func ownerSyncToEmptyTextCancelsInFlightFullHighlightRender() async {
+        let model = HighlightrEditorView(text: "hello", language: "swift")
+        let textView = NSTextView(frame: .zero)
+        let engine = SuspendingSyntaxHighlightingEngine()
+        let coordinator = EditorCoordinator(
+            owner: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+
+        await engine.waitForRenderStart()
+
+        model.text = ""
+        coordinator.syncViewFromOwner()
 
         let wasCancelled = await waitForRenderCancellation(of: engine)
         #expect(wasCancelled)
