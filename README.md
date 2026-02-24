@@ -1,6 +1,6 @@
 # HighlightrUI
 
-`HighlightrUI` is a UIKit/AppKit-first Swift package for syntax-highlighted text editing with `HighlighterSwift`.
+`HighlightrUI` is a Swift package for syntax-highlighted text editing with `HighlighterSwift`.
 
 ## Requirements
 
