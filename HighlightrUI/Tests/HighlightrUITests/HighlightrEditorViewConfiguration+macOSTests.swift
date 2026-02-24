@@ -3,6 +3,17 @@ import AppKit
 import Testing
 @testable import HighlightrUI
 
+private final class BlurRejectingWindow: NSWindow {
+    var rejectsBlurRequest = false
+
+    override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
+        if rejectsBlurRequest, responder == nil {
+            return false
+        }
+        return super.makeFirstResponder(responder)
+    }
+}
+
 @MainActor
 struct HighlightrEditorViewConfigurationmacOSTests {
     @Test
@@ -105,6 +116,40 @@ struct HighlightrEditorViewConfigurationmacOSTests {
 
         #expect(view.isEditorFocused == true)
         #expect(host.window.firstResponder === view.platformTextView)
+
+        _ = host
+    }
+
+    @Test
+    func blurRequestFailureKeepsModelFocusSynchronizedWithResponderState() async {
+        let view = HighlightrEditorView(
+            language: "swift",
+            engineFactory: { MockSyntaxHighlightingEngine() }
+        )
+
+        let frame = NSRect(x: 0, y: 0, width: 960, height: 640)
+        let window = BlurRejectingWindow(
+            contentRect: frame,
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        let host = WindowHost(view: view, window: window)
+        host.pump()
+
+        view.focus()
+        await AsyncDrain.firstTurn()
+        host.pump()
+        #expect(window.firstResponder === view.platformTextView)
+        #expect(view.isEditorFocused == true)
+
+        window.rejectsBlurRequest = true
+        view.blur()
+        await AsyncDrain.firstTurn()
+        host.pump()
+
+        #expect(window.firstResponder === view.platformTextView)
+        #expect(view.isEditorFocused == true)
 
         _ = host
     }

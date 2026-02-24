@@ -684,10 +684,6 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
             }
         } else if isEditorFocused {
             _ = Self.requestTextViewBlur(textView)
-            let focusedAfterRequest = Self.isTextViewFirstResponder(textView)
-            if focusedAfterRequest {
-                focusOverride = false
-            }
         }
 
         if syncRuntimeState {
