@@ -1,25 +1,32 @@
-# Migration Guide (v2 -> v3)
+# Migration Guide (v1 -> v2)
 
-This guide summarizes breaking changes introduced in HighlightrUI v3.
+This guide is for applications currently using HighlightrUI **v1** and migrating to **v2**.
 
-## Overview
+## Scope
 
-- Public state owner is `HighlightrModel` (`@Observable`) with a single flat property set.
-- `HighlightrEditorView` / `HighlightrEditorViewController` now require injected `HighlightrModel`.
-- Legacy direct initializers (`text:language:...`) were removed from public API.
-- `EditorCoordinator` was removed and replaced by internal `EditorSession` + `HighlightPipeline`.
-- Command interpretation moved to internal `EditorCommandService`.
+- Focus: public API changes that require app-side migration.
+- Out of scope: internal implementation refactors that do not change app-facing APIs.
+
+## Breaking API Changes
+
+- `HighlightrModel` is now the single public state owner.
+- `HighlightrEditorView` / `HighlightrEditorViewController` are model-injection based.
+- Legacy direct initializers (`text:language:...`) were removed.
+- `HighlightrDocumentModel` and `HighlightrRuntimeModel` were removed.
+- `HighlightrEditorView` mirror properties were removed (`text`, `language`, `theme`, `selection`, `isEditable`, `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`).
 
 ## API Mapping
 
 - `HighlightrEditorView(text:language:...)`
   -> `HighlightrEditorView(model: HighlightrModel(text:language:...))`
 - `HighlightrEditorViewController(text:language:...)`
-  -> `HighlightrEditorViewController(model: ...)`
+  -> `HighlightrEditorViewController(model: HighlightrModel(...))`
 - `HighlightrEditorViewController(editorView: ...)`
-  -> `HighlightrEditorViewController(model: editorView.model)`
+  -> unchanged (still available)
+- `editorView.text` / `editorView.theme` / `editorView.selection` / ...
+  -> `model.text` / `model.theme` / `model.selection` / ...
 
-## New State Model
+## New State Model (v2)
 
 ```swift
 let model = HighlightrModel(
@@ -32,18 +39,17 @@ let model = HighlightrModel(
     isUndoable: false,
     isRedoable: false
 )
+
+let view = HighlightrEditorView(model: model)
+let controller = HighlightrEditorViewController(model: model)
 ```
 
-Update state directly on `model` properties (`model.text`, `model.theme`, etc.).
+Update editor state through `model` (`model.text`, `model.theme`, etc.).
 
-## Removed Public APIs
+## Migration Checklist
 
-- `HighlightrDocumentModel`
-- `HighlightrRuntimeModel`
-- `HighlightrEditorView` document/runtime mirror properties (`text`, `language`, `theme`, `selection`, `isEditable`, `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`)
-- Public convenience initializers based on `text/language/...`
-- `EditorCoordinator` public usage
-
-## Notes
-
-- This release is intentionally breaking and does not include public compatibility shims.
+1. Replace removed direct initializers with model-based initializers.
+2. Introduce and share `HighlightrModel` where the editor state is managed.
+3. Replace removed `HighlightrEditorView` mirror property access with `model` property access.
+4. Remove references to deleted model types (`HighlightrDocumentModel` / `HighlightrRuntimeModel`).
+5. Re-run your app tests against v2.
