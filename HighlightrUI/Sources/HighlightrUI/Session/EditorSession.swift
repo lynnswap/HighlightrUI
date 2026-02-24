@@ -149,7 +149,9 @@ final class EditorSession: NSObject, PlatformEditorAdapterDelegate {
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
-        syncStateFromView(focusOverride: false)
+        let shouldPreservePendingFocus = model.isEditorFocused && textView.window == nil
+        let focusOverride: Bool? = shouldPreservePendingFocus ? true : nil
+        syncStateFromView(focusOverride: focusOverride)
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -745,7 +747,9 @@ final class EditorSession: NSObject, PlatformEditorAdapterDelegate {
     }
 
     func textDidEndEditing(_ notification: Notification) {
-        syncStateFromView(focusOverride: false)
+        let shouldPreservePendingFocus = model.isEditorFocused && Self.hostingWindow(for: textView) == nil
+        let focusOverride: Bool? = shouldPreservePendingFocus ? true : nil
+        syncStateFromView(focusOverride: focusOverride)
     }
 
     func textViewDidChangeSelection(_ notification: Notification) {

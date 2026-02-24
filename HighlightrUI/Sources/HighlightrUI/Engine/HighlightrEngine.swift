@@ -10,6 +10,7 @@ import AppKit
 @MainActor
 public final class HighlightrEngine: SyntaxHighlightingEngine {
     private var runtime: HighlighterRuntime?
+    private var runtimeInitializationTask: Task<HighlighterRuntime, Never>?
     private let validThemeNames: Set<String>
     private let sortedThemeNames: [String]
     private let fallbackThemeName: String
@@ -23,6 +24,7 @@ public final class HighlightrEngine: SyntaxHighlightingEngine {
         self.sortedThemeNames = themeNames
         self.fallbackThemeName = themeNames.contains("default") ? "default" : (themeNames.first ?? "default")
         self.runtime = nil
+        self.runtimeInitializationTask = nil
         self.languageName = nil
         self.themeName = fallbackThemeName
     }
@@ -68,8 +70,21 @@ public final class HighlightrEngine: SyntaxHighlightingEngine {
         if let runtime {
             return runtime
         }
-        let createdRuntime = await HighlighterRuntime()
+        if let runtimeInitializationTask {
+            let createdRuntime = await runtimeInitializationTask.value
+            runtime = createdRuntime
+            self.runtimeInitializationTask = nil
+            return createdRuntime
+        }
+
+        let runtimeInitializationTask = Task {
+            await HighlighterRuntime()
+        }
+        self.runtimeInitializationTask = runtimeInitializationTask
+
+        let createdRuntime = await runtimeInitializationTask.value
         runtime = createdRuntime
+        self.runtimeInitializationTask = nil
         return createdRuntime
     }
 
