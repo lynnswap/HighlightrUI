@@ -133,6 +133,9 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         }
 
         let clampedSelection = Self.clampedSelection(owner.selection, text: textView.text ?? "")
+        if owner.selection != clampedSelection {
+            owner.applyPlatformSelectionState(clampedSelection)
+        }
         let clampedRange = NSRange(location: clampedSelection.location, length: clampedSelection.length)
         if textView.selectedRange != clampedRange {
             textView.selectedRange = clampedRange
@@ -348,6 +351,9 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         }
 
         let clampedSelection = Self.clampedSelection(owner.selection, text: textView.string)
+        if owner.selection != clampedSelection {
+            owner.applyPlatformSelectionState(clampedSelection)
+        }
         let clampedRange = NSRange(location: clampedSelection.location, length: clampedSelection.length)
         if textView.selectedRange() != clampedRange {
             textView.setSelectedRange(clampedRange)

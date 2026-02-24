@@ -210,6 +210,12 @@ public final class HighlightrEditorView: UIView {
         }
     }
 
+    func applyPlatformSelectionState(_ selection: TextSelection) {
+        performCoordinatorMutation {
+            self.selection = selection
+        }
+    }
+
     func applyPlatformRuntimeState(
         isEditorFocused: Bool,
         isUndoable: Bool,

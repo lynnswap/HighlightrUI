@@ -68,6 +68,7 @@ struct EditorCoordinatorSyncTests {
         coordinator.syncViewFromOwner()
 
         #expect(textView.selectedRange == NSRange(location: 0, length: 3))
+        #expect(model.selection == TextSelection(location: 0, length: 3))
         withExtendedLifetime(coordinator) {}
     }
 
@@ -87,6 +88,7 @@ struct EditorCoordinatorSyncTests {
         coordinator.syncViewFromOwner()
 
         #expect(textView.selectedRange == NSRange(location: 3, length: 0))
+        #expect(model.selection == TextSelection(location: 3, length: 0))
         withExtendedLifetime(coordinator) {}
     }
 
@@ -223,6 +225,7 @@ struct EditorCoordinatorSyncTests {
         coordinator.syncViewFromOwner()
 
         #expect(textView.selectedRange() == NSRange(location: 0, length: 3))
+        #expect(model.selection == TextSelection(location: 0, length: 3))
         withExtendedLifetime(coordinator) {}
     }
 
@@ -242,6 +245,7 @@ struct EditorCoordinatorSyncTests {
         coordinator.syncViewFromOwner()
 
         #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
+        #expect(model.selection == TextSelection(location: 3, length: 0))
         withExtendedLifetime(coordinator) {}
     }
 
