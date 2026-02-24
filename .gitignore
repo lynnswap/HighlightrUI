@@ -6,3 +6,7 @@ DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+
+# Nested Swift package artifacts (e.g. HighlightrUI/Package root)
+**/.build/
+**/.swiftpm/

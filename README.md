@@ -1,94 +1,84 @@
 # HighlightrUI
 
-A Swift Package that provides SwiftUI views for syntax highlighted text editing using [Highlightr](https://github.com/raspu/Highlightr).
+`HighlightrUI` is a UIKit/AppKit-first Swift package for syntax-highlighted text editing with `Highlightr`.
 
-This package targets **iOS 17** and **macOS 14** and offers:
+## Requirements
 
-- `HighlightrTextView` &ndash; a SwiftUI wrapper around a text view with syntax highlighting
-- `HighlightrJSConsoleView` &ndash; a resizable JavaScript console view
-- Toolbar modifiers to make editing code more comfortable
+- Swift 6.2
+- iOS 18.0+
+- macOS 15.0+
 
-## Installation
-
-Add the following dependency to your `Package.swift`:
+## UIKit Example
 
 ```swift
-.package(url: "https://github.com/lynnswap/HighlightrUI.git", from: "1.2.1")
-```
-
-and then import `HighlightrUI` where needed.
-
-## Example Usage
-
-```swift
+import UIKit
 import HighlightrUI
 
-struct ContentView: View {
-    @State private var text = "console.log(\"Hello\")"
+let controller = HighlightrEditorViewController(
+    text: "console.log('hello')",
+    language: "javascript"
+)
+controller.perform(.focus)
 
-    var body: some View {
-        HighlightrTextView(text: $text, language: "javascript")
-    }
-}
+controller.editorView.theme = .named("github")
+controller.editorView.text = "console.log('updated')"
 ```
 
-## iOS Input Accessory
-
-Available on both `HighlightrTextView` and `HighlightrJSConsoleView` on iOS.
-
-- `inputAccessoryView(_ view: UIView?)`: Attach any UIKit view as the accessory.
-- `inputAccessoryView(_ builder: (HighlightrTextViewModel) -> UIView?)`: Build a UIKit view with access to the editor model.
-- `inputAccessory(_ content: (HighlightrTextViewModel) -> some View)`: Provide a SwiftUI accessory; it is wrapped under the hood.
-
-SwiftUI examples:
+## AppKit Example
 
 ```swift
-HighlightrTextView(text: $text, language: "javascript")
-    .inputAccessory { model in
-        HStack {
-            Spacer()
-            Button { model.dismissKeyboard() } label: {
-                Image(systemName: "chevron.down")
-            }
-        }
-    }
+import AppKit
+import HighlightrUI
 
-HighlightrJSConsoleView(text: $text, maxHeight: 300)
-    .inputAccessory { model in
-        HStack {
-            Spacer()
-            Button { model.dismissKeyboard() } label: {
-                Image(systemName: "chevron.down")
-            }
-        }
-    }
+let editorView = HighlightrEditorView(
+    text: "print(\"hello\")",
+    language: "swift"
+)
+
+let controller = HighlightrEditorViewController(
+    editorView: editorView
+)
 ```
 
-UIKit builder example (works with both views):
+On iOS, `HighlightrEditorViewController` includes a built-in fixed coding keyboard toolbar.
 
-```swift
-HighlightrJSConsoleView(text: $text, maxHeight: 300)
-    .inputAccessoryView { model in
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "chevron.down"), for: .normal)
-        button.addAction(UIAction { _ in model.dismissKeyboard() }, for: .touchUpInside)
+## Core API
 
-        let toolbar = UIToolbar()
-        toolbar.items = [
-            UIBarButtonItem.flexibleSpace(),
-            UIBarButtonItem(customView: button)
-        ]
-        toolbar.sizeToFit()
-        return toolbar
-    }
+`HighlightrUI` exposes state via `@Observable` properties on `HighlightrEditorView`.
+
+- Document state: `text`, `language`, `theme`, `selection`, `isEditable`
+- Runtime state: `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`
+
+Read/update those properties directly on `HighlightrEditorView` (or via `controller.editorView`).
+
+## Testing
+
+Run tests with `xcodebuild` from the repository root.
+
+```bash
+# macOS: Package tests
+xcodebuild -workspace HighlightrUI.xcworkspace \
+  -scheme HighlightrUITests \
+  -destination 'platform=macOS' \
+  test
+
+# iOS Simulator: Package tests
+xcodebuild -workspace HighlightrUI.xcworkspace \
+  -scheme HighlightrUITests \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+  test
 ```
 
-## Apps Using
+If the destination does not exist on your machine, check available simulators with:
 
-<p float="left">
-    <a href="https://apps.apple.com/jp/app/tweetpd/id1671411031"><img src="https://i.imgur.com/AC6eGdx.png" width="65" height="65"></a>
-</p>
+```bash
+xcrun simctl list devices available
+```
+
+## Migration
+
+See [`Migration`](Docs/Migration.md).
 
 ## License
 
-This project is released under the MIT License. See [LICENSE](LICENSE) for details.
+[MIT](LICENSE)
