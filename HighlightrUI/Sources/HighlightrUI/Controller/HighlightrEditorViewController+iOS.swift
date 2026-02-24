@@ -1,5 +1,6 @@
 #if canImport(UIKit)
 import Observation
+import ObservationsCompat
 import UIKit
 
 @MainActor
@@ -29,7 +30,15 @@ public final class HighlightrEditorViewController: UIViewController {
     @ObservationIgnored
     private var sizeClassTraitRegistration: UITraitChangeRegistration?
     @ObservationIgnored
-    private var isToolbarObservationActive = false
+    private var toolbarObservationTask: Task<Void, Never>?
+
+    private struct ToolbarObservationSnapshot: Equatable, Sendable {
+        let text: String
+        let isEditable: Bool
+        let isEditorFocused: Bool
+        let isUndoable: Bool
+        let isRedoable: Bool
+    }
 
     public convenience init(
         model: HighlightrModel,
@@ -58,7 +67,7 @@ public final class HighlightrEditorViewController: UIViewController {
     }
 
     isolated deinit {
-        isToolbarObservationActive = false
+        toolbarObservationTask?.cancel()
     }
 
     public override func viewDidLoad() {
@@ -211,24 +220,26 @@ public final class HighlightrEditorViewController: UIViewController {
     }
 
     private func startToolbarStateSync() {
-        isToolbarObservationActive = true
-        observeToolbarState()
-    }
-
-    private func observeToolbarState() {
-        guard isToolbarObservationActive else { return }
-
-        withObservationTracking {
-            _ = model.text
-            _ = model.isEditable
-            _ = model.isEditorFocused
-            _ = model.isUndoable
-            _ = model.isRedoable
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self, self.isToolbarObservationActive else { return }
+        toolbarObservationTask?.cancel()
+        let observedModel = model
+        let stream = ObservationsCompat(backend: .automatic) {
+            ToolbarObservationSnapshot(
+                text: observedModel.text,
+                isEditable: observedModel.isEditable,
+                isEditorFocused: observedModel.isEditorFocused,
+                isUndoable: observedModel.isUndoable,
+                isRedoable: observedModel.isRedoable
+            )
+        }
+        toolbarObservationTask = Task { @MainActor [weak self] in
+            for await _ in stream {
+                if Task.isCancelled {
+                    break
+                }
+                guard let self else {
+                    break
+                }
                 self.applyToolbarCommandAvailability()
-                self.observeToolbarState()
             }
         }
     }

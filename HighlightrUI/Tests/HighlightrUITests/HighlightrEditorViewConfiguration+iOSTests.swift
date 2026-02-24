@@ -111,5 +111,22 @@ struct HighlightrEditorViewConfigurationiOSTests {
 
         _ = host
     }
+
+    @Test
+    func viewReleasesAfterModelObservationSetup() async {
+        weak var releasedView: HighlightrEditorView?
+
+        do {
+            var view: HighlightrEditorView? = makeEditorView(
+                language: "swift",
+                engineFactory: { MockSyntaxHighlightingEngine() }
+            )
+            releasedView = view
+            view = nil
+        }
+
+        await AsyncDrain.firstTurn()
+        #expect(releasedView == nil)
+    }
 }
 #endif
