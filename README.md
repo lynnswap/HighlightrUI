@@ -47,7 +47,7 @@ On iOS, `HighlightrEditorViewController` includes a built-in fixed coding keyboa
 `HighlightrUI` exposes state via `@Observable` properties on `HighlightrEditorView`.
 
 - Document state: `text`, `language`, `theme`, `selection`, `isEditable`
-- Runtime state: `isFocused`, `isUndoable`, `isRedoable`, `hasText`
+- Runtime state: `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`
 
 Read/update those properties directly on `HighlightrEditorView` (or via `controller.editorView`).
 

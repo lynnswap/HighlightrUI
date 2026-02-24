@@ -12,7 +12,7 @@ This guide summarizes breaking changes introduced in HighlightrUI v2.
 
 ## API Mapping
 
-- `HighlightrEditorView(model: ...)` -> `HighlightrEditorView(text:language:theme:selection:isEditable:isFocused:isUndoable:isRedoable:...)`
+- `HighlightrEditorView(model: ...)` -> `HighlightrEditorView(text:language:theme:selection:isEditable:isEditorFocused:isUndoable:isRedoable:...)`
 - `HighlightrEditorViewController(model: ...)` -> `HighlightrEditorViewController(text:language:...)` or `HighlightrEditorViewController(editorView: ...)`
 - `import HighlightrUICore` -> `import HighlightrUI`
 
@@ -21,7 +21,7 @@ This guide summarizes breaking changes introduced in HighlightrUI v2.
 State now lives on `HighlightrEditorView`:
 
 - Document state: `text`, `language`, `theme`, `selection`, `isEditable`
-- Runtime state: `isFocused`, `isUndoable`, `isRedoable`, `hasText`
+- Runtime state: `isEditorFocused`, `isUndoable`, `isRedoable`, `hasText`
 
 `hasText` is now derived from `text` and is no longer independently mutable.
 
