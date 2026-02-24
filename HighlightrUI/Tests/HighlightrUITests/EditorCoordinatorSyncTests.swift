@@ -134,6 +134,26 @@ struct EditorCoordinatorSyncTests {
         withExtendedLifetime(coordinator) {}
     }
 
+    @Test
+    func initDoesNotOverrideCallerProvidedRuntimeFlags() {
+        let model = HighlightrEditorView(text: "abc", language: "swift")
+        model.isUndoable = true
+        model.isRedoable = true
+
+        let textView = PlatformEditorTextView(frame: .zero, textContainer: nil)
+        let engine = MockSyntaxHighlightingEngine()
+        let coordinator = EditorCoordinator(
+            owner: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+
+        #expect(model.isUndoable)
+        #expect(model.isRedoable)
+        withExtendedLifetime(coordinator) {}
+    }
+
 }
 
 #elseif canImport(AppKit)
@@ -266,6 +286,26 @@ struct EditorCoordinatorSyncTests {
         model.language = "json"
         coordinator.syncViewFromOwner()
         #expect(engine.setLanguageCalls == ["swift", "json"])
+        withExtendedLifetime(coordinator) {}
+    }
+
+    @Test
+    func initDoesNotOverrideCallerProvidedRuntimeFlags() {
+        let model = HighlightrEditorView(text: "abc", language: "swift")
+        model.isUndoable = true
+        model.isRedoable = true
+
+        let textView = NSTextView(frame: .zero)
+        let engine = MockSyntaxHighlightingEngine()
+        let coordinator = EditorCoordinator(
+            owner: model,
+            textView: textView,
+            engine: engine,
+            initialColorScheme: .light
+        )
+
+        #expect(model.isUndoable)
+        #expect(model.isRedoable)
         withExtendedLifetime(coordinator) {}
     }
 

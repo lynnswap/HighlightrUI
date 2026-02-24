@@ -30,9 +30,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         super.init()
 
         textView.delegate = self
-        syncViewFromOwner()
-        let keepFocusedRequest = owner.isEditorFocused && !textView.isFirstResponder
-        syncRuntimeStateFromView(textView, focusOverride: keepFocusedRequest ? true : nil)
+        syncViewFromOwner(syncRuntimeState: false)
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
@@ -63,8 +61,8 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         syncRuntimeStateFromView(textView, focusOverride: focusOverride)
     }
 
-    func syncViewFromOwner() {
-        applyOwnerState()
+    func syncViewFromOwner(syncRuntimeState: Bool = true) {
+        applyOwnerState(syncRuntimeState: syncRuntimeState)
     }
 
     func textViewDidChange(_ textView: UITextView) {
@@ -119,7 +117,7 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
         return false
     }
 
-    private func applyOwnerState() {
+    private func applyOwnerState(syncRuntimeState: Bool) {
         guard let textView else { return }
 
         isApplyingFromOwner = true
@@ -156,7 +154,9 @@ final class EditorCoordinator: NSObject, UITextViewDelegate {
             _ = textView.resignFirstResponder()
         }
 
-        syncRuntimeStateFromView(textView, focusOverride: focusOverride)
+        if syncRuntimeState {
+            syncRuntimeStateFromView(textView, focusOverride: focusOverride)
+        }
     }
 
     private func syncRuntimeStateFromView(_ textView: UITextView, focusOverride: Bool? = nil) {
@@ -257,9 +257,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         super.init()
 
         textView.delegate = self
-        syncViewFromOwner()
-        let keepFocusedRequest = owner.isEditorFocused && (textView.window?.firstResponder !== textView)
-        syncRuntimeStateFromView(textView, focusOverride: keepFocusedRequest ? true : nil)
+        syncViewFromOwner(syncRuntimeState: false)
     }
 
     func applyAppearance(colorScheme: EditorColorScheme) {
@@ -290,8 +288,8 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         syncRuntimeStateFromView(textView, focusOverride: focusOverride)
     }
 
-    func syncViewFromOwner() {
-        applyOwnerState()
+    func syncViewFromOwner(syncRuntimeState: Bool = true) {
+        applyOwnerState(syncRuntimeState: syncRuntimeState)
     }
 
     func textDidChange(_ notification: Notification) {
@@ -334,7 +332,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
         return false
     }
 
-    private func applyOwnerState() {
+    private func applyOwnerState(syncRuntimeState: Bool) {
         guard let textView else { return }
 
         isApplyingFromOwner = true
@@ -372,7 +370,9 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
             _ = textView.window?.makeFirstResponder(nil)
         }
 
-        syncRuntimeStateFromView(textView, focusOverride: focusOverride)
+        if syncRuntimeState {
+            syncRuntimeStateFromView(textView, focusOverride: focusOverride)
+        }
     }
 
     private func syncRuntimeStateFromView(_ textView: NSTextView, focusOverride: Bool? = nil) {

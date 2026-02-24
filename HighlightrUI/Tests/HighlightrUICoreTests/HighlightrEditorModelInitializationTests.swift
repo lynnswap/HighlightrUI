@@ -50,12 +50,12 @@ struct HighlightrEditorViewRuntimeInitializationTests {
             language: "swift",
             isEditorFocused: true,
             isUndoable: true,
-            isRedoable: false
+            isRedoable: true
         )
 
         #expect(model.isEditorFocused)
-        #expect(!model.isUndoable)
-        #expect(!model.isRedoable)
+        #expect(model.isUndoable)
+        #expect(model.isRedoable)
         #expect(model.hasText)
     }
 }

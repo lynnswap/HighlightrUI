@@ -111,7 +111,7 @@ public final class HighlightrEditorView: UIView {
         setupHierarchy()
         registerTraitChanges()
         coordinator.applyAppearance(colorScheme: editorColorScheme(from: traitCollection.userInterfaceStyle))
-        coordinator.syncViewFromOwner()
+        coordinator.syncViewFromOwner(syncRuntimeState: false)
     }
 
     @available(*, unavailable)

@@ -100,7 +100,7 @@ public final class HighlightrEditorView: NSView {
         configureScrollView(scrollView, textView: textView)
         setupHierarchy()
         coordinator.applyAppearance(colorScheme: editorColorScheme(from: effectiveAppearance))
-        coordinator.syncViewFromOwner()
+        coordinator.syncViewFromOwner(syncRuntimeState: false)
     }
 
     @available(*, unavailable)
