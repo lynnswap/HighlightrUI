@@ -340,6 +340,31 @@ struct HighlightrEditorViewControllerCommandiOSTests {
         _ = host
     }
 
+    @Test
+    func focusAndDismissKeyboardCommandsSyncResponderImmediatelyWhenHosted() {
+        let model = HighlightrModel(text: "abc", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+        )
+
+        controller.loadViewIfNeeded()
+        let host = WindowHost(view: controller.view)
+        host.pump()
+
+        #expect(controller.editorView.platformTextView.isFirstResponder == false)
+        #expect(model.isEditorFocused == false)
+
+        controller.perform(.focus)
+        #expect(controller.editorView.platformTextView.isFirstResponder == true)
+        #expect(model.isEditorFocused == true)
+
+        controller.perform(.dismissKeyboard)
+        #expect(controller.editorView.platformTextView.isFirstResponder == false)
+        #expect(model.isEditorFocused == false)
+
+        _ = host
+    }
+
     private func normalizeQuotes(_ text: String?) -> String? {
         guard let text else { return nil }
         return normalizeQuotes(text)

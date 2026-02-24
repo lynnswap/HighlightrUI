@@ -348,5 +348,27 @@ struct HighlightrEditorViewControllerCommandmacOSTests {
 
         _ = host
     }
+
+    @Test
+    func focusAndBlurCommandsSyncResponderImmediatelyWhenHosted() {
+        let model = HighlightrModel(text: "abc", language: "swift")
+        let controller = HighlightrEditorViewController(
+            model: model,
+        )
+
+        controller.loadView()
+        let host = WindowHost(view: controller.view)
+        host.pump()
+
+        controller.perform(.focus)
+        #expect(host.window.firstResponder === controller.editorView.platformTextView)
+        #expect(model.isEditorFocused == true)
+
+        controller.perform(.blur)
+        #expect(host.window.firstResponder !== controller.editorView.platformTextView)
+        #expect(model.isEditorFocused == false)
+
+        _ = host
+    }
 }
 #endif

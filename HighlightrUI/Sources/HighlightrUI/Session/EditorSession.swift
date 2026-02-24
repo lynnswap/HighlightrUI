@@ -92,6 +92,7 @@ final class EditorSession: NSObject, PlatformEditorAdapterDelegate {
             switch effect {
             case .requestFocus(let shouldFocus):
                 model.isEditorFocused = shouldFocus
+                syncViewFromModel()
             case .requestUndo:
                 textView.undoManager?.undo()
                 syncStateFromView()
@@ -692,6 +693,7 @@ final class EditorSession: NSObject, PlatformEditorAdapterDelegate {
             switch effect {
             case .requestFocus(let shouldFocus):
                 model.isEditorFocused = shouldFocus
+                syncViewFromModel()
             case .requestUndo:
                 textView.undoManager?.undo()
                 syncStateFromView()
