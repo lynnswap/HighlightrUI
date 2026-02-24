@@ -55,5 +55,26 @@ struct EditorCoordinatorAutoIndentiOSTests {
         #expect(model.text == "if true {\n    let x = 1\n")
         #expect(textView.text == "if true {\n    let x = 1\n")
     }
+
+    @Test
+    func doubleSpaceShortcutIsNormalizedToTwoSpaces() async {
+        let model = HighlightrEditorView(text: "let value = 1 ", language: "swift")
+        let controller = HighlightrEditorViewController(editorView: model)
+
+        controller.loadViewIfNeeded()
+        let textView = controller.editorView.platformTextView
+        let spaceLocation = ("let value = 1 " as NSString).length - 1
+
+        let handled = controller.editorView.coordinator.textView(
+            textView,
+            shouldChangeTextIn: NSRange(location: spaceLocation, length: 1),
+            replacementText: ". "
+        )
+
+        await AsyncDrain.firstTurn()
+        #expect(handled == false)
+        #expect(model.text == "let value = 1  ")
+        #expect(textView.text == "let value = 1  ")
+    }
 }
 #endif
