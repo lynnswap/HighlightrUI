@@ -893,14 +893,7 @@ final class EditorCoordinator: NSObject, NSTextViewDelegate {
     }
 
     private static func isTextViewFirstResponder(_ textView: NSTextView) -> Bool {
-        guard let window = editorWindow(for: textView) else { return false }
-        return window.firstResponder === textView
-    }
-
-    private static func editorWindow(for textView: NSTextView) -> NSWindow? {
-        let windowNumber = textView.windowNumber
-        guard windowNumber != 0 else { return nil }
-        return NSApplication.shared.windows.first { $0.windowNumber == windowNumber }
+        NSApplication.shared.windows.contains { $0.firstResponder === textView }
     }
 
     private static func highlightRangeForEditedFlow(
