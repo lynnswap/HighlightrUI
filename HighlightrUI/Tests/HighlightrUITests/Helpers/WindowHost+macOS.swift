@@ -5,20 +5,22 @@ import AppKit
 final class WindowHost {
     let window: NSWindow
 
-    init(view: NSView) {
+    init(view: NSView, window: NSWindow? = nil) {
         _ = NSApplication.shared
 
-        let frame = NSRect(x: 0, y: 0, width: 960, height: 640)
-        self.window = NSWindow(
-            contentRect: frame,
+        let defaultFrame = NSRect(x: 0, y: 0, width: 960, height: 640)
+        let resolvedWindow = window ?? NSWindow(
+            contentRect: defaultFrame,
             styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false
         )
+        self.window = resolvedWindow
+        let frame = resolvedWindow.frame
 
         let container = NSView(frame: frame)
         container.wantsLayer = true
-        window.contentView = container
+        self.window.contentView = container
 
         container.addSubview(view)
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -29,7 +31,7 @@ final class WindowHost {
             view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
 
-        window.makeKeyAndOrderFront(nil)
+        self.window.makeKeyAndOrderFront(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)
         container.layoutSubtreeIfNeeded()
     }

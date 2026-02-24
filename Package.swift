@@ -16,13 +16,15 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/raspu/Highlightr", from: "2.3.0"),
+        .package(url: "https://github.com/smittytone/HighlighterSwift", from: "3.0.0"),
+        .package(url: "https://github.com/lynnswap/ObservationsCompat", exact: "0.1.1"),
     ],
     targets: [
         .target(
             name: "HighlightrUI",
             dependencies: [
-                .product(name: "Highlightr", package: "Highlightr"),
+                .product(name: "Highlighter", package: "highlighterswift"),
+                .product(name: "ObservationsCompat", package: "observationscompat"),
             ],
             path: "HighlightrUI/Sources/HighlightrUI",
             resources: [
@@ -30,6 +32,9 @@ let package = Package(
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
+                .defaultIsolation(nil),
+                .strictMemorySafety(),
+                .treatAllWarnings(as: .error),
             ]
         ),
         .testTarget(
@@ -44,6 +49,9 @@ let package = Package(
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
+                .defaultIsolation(nil),
+                .strictMemorySafety(),
+                .treatAllWarnings(as: .error),
             ]
         ),
     ]

@@ -9,7 +9,7 @@ struct HighlightrEditorViewControllerToolbariOSTests {
     @Test
     func controllerInstallsFixedKeyboardToolbar() {
         let controller = HighlightrEditorViewController(
-            editorView: HighlightrEditorView(language: "swift"),
+            editorView: makeEditorView(language: "swift"),
         )
 
         controller.loadViewIfNeeded()
@@ -44,9 +44,9 @@ struct HighlightrEditorViewControllerToolbariOSTests {
 
     @Test
     func undoRedoButtonsReflectUndoAvailability() async {
-        let model = HighlightrEditorView(language: "swift")
+        let model = HighlightrModel(language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -86,9 +86,9 @@ struct HighlightrEditorViewControllerToolbariOSTests {
 
     @Test
     func editMenuReflectsExternalModelChangesAfterViewSync() async {
-        let model = HighlightrEditorView(text: "abc", language: "swift")
+        let model = HighlightrModel(text: "abc", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
+            model: model,
         )
 
         controller.loadViewIfNeeded()
@@ -114,7 +114,7 @@ struct HighlightrEditorViewControllerToolbariOSTests {
     @Test
     func redoButtonAlwaysVisibleInCompactAndTracksEnabledState() async {
         let controller = HighlightrEditorViewController(
-            editorView: HighlightrEditorView(language: "swift"),
+            editorView: makeEditorView(language: "swift"),
         )
         let container = UIViewController()
         container.addChild(controller)
@@ -163,9 +163,9 @@ struct HighlightrEditorViewControllerToolbariOSTests {
         weak var releasedController: HighlightrEditorViewController?
 
         do {
-            let model = HighlightrEditorView(language: "swift")
+            let model = HighlightrModel(language: "swift")
             var controller: HighlightrEditorViewController? = HighlightrEditorViewController(
-                editorView: model,
+                model: model,
             )
             controller?.loadViewIfNeeded()
             releasedController = controller

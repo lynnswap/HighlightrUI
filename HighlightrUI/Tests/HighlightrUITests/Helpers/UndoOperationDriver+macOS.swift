@@ -6,21 +6,21 @@ import Testing
 
 @MainActor
 final class UndoOperationDriver {
-    let model: HighlightrEditorView
+    let model: HighlightrModel
     let view: HighlightrEditorView
     let host: WindowHost
 
     var textView: NSTextView { view.platformTextView }
 
     init(initialText: String, allowsUndo: Bool = true) {
-        let view = HighlightrEditorView(
+        let view = makeEditorView(
             text: initialText,
             language: "swift",
             configuration: .init(lineWrappingEnabled: false, allowsUndo: allowsUndo),
             engineFactory: { MockSyntaxHighlightingEngine() }
         )
         self.view = view
-        self.model = view
+        self.model = view.model
         self.host = WindowHost(view: view)
         host.pump()
     }
@@ -34,10 +34,10 @@ final class UndoOperationDriver {
     }
 
     func settle() async {
-        view.coordinator.syncStateFromView()
+        view.session.syncStateFromView()
         host.pump()
         await AsyncDrain.firstTurn()
-        view.coordinator.syncStateFromView()
+        view.session.syncStateFromView()
         host.pump()
     }
 

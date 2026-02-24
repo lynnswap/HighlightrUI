@@ -27,9 +27,12 @@ private struct HighlightrEditorViewControllerPreviewContainer: UIViewControllerR
     }
 
     func makeUIViewController(context: Context) -> HighlightrEditorViewController {
-        HighlightrEditorViewController(
+        let model = HighlightrModel(
             text: HighlightrEditorViewControllerPreviewFactory.previewText,
             language: "swift"
+        )
+        return HighlightrEditorViewController(
+            model: model
         )
     }
 
@@ -48,9 +51,12 @@ import AppKit
 
 private struct HighlightrEditorViewControllerPreviewContainer: NSViewControllerRepresentable {
     func makeNSViewController(context: Context) -> HighlightrEditorViewController {
-        HighlightrEditorViewController(
+        let model = HighlightrModel(
             text: HighlightrEditorViewControllerPreviewFactory.previewText,
             language: "swift"
+        )
+        return HighlightrEditorViewController(
+            model: model
         )
     }
 

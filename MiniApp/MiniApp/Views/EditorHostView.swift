@@ -6,10 +6,10 @@ import UIKit
 
 @MainActor
 struct EditorHostView: UIViewControllerRepresentable {
-    let editorView: HighlightrEditorView
+    let model: HighlightrModel
 
     func makeUIViewController(context: Context) -> HighlightrEditorViewController {
-        let controller = HighlightrEditorViewController(editorView: editorView)
+        let controller = HighlightrEditorViewController(model: model)
         controller.editorView.accessibilityIdentifier = "editor.host"
         return controller
     }
@@ -21,10 +21,10 @@ import AppKit
 
 @MainActor
 struct EditorHostView: NSViewControllerRepresentable {
-    let editorView: HighlightrEditorView
+    let model: HighlightrModel
 
     func makeNSViewController(context: Context) -> HighlightrEditorViewController {
-        let controller = HighlightrEditorViewController(editorView: editorView)
+        let controller = HighlightrEditorViewController(model: model)
         controller.editorView.setAccessibilityIdentifier("editor.host")
         return controller
     }

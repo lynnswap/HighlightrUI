@@ -1,10 +1,12 @@
 #if canImport(UIKit)
 import Observation
+import ObservationsCompat
 import UIKit
 
 @MainActor
 @Observable
 public final class HighlightrEditorViewController: UIViewController {
+    public let model: HighlightrModel
     public let editorView: HighlightrEditorView
 
     @ObservationIgnored
@@ -28,30 +30,24 @@ public final class HighlightrEditorViewController: UIViewController {
     @ObservationIgnored
     private var sizeClassTraitRegistration: UITraitChangeRegistration?
     @ObservationIgnored
-    private var isToolbarObservationActive = false
+    private var toolbarObservationTask: Task<Void, Never>?
+
+    private struct ToolbarObservationSnapshot: Equatable, Sendable {
+        let text: String
+        let isEditable: Bool
+        let isEditorFocused: Bool
+        let isUndoable: Bool
+        let isRedoable: Bool
+    }
 
     public convenience init(
-        text: String = "",
-        language: EditorLanguage,
-        theme: EditorTheme = .automatic(light: "paraiso-light", dark: "paraiso-dark"),
-        selection: TextSelection = .zero,
-        isEditable: Bool = true,
-        isEditorFocused: Bool = false,
-        isUndoable: Bool = false,
-        isRedoable: Bool = false,
+        model: HighlightrModel,
         viewConfiguration: EditorViewConfiguration = .init(),
         controllerConfiguration: HighlightrEditorViewControllerConfiguration = .init(),
         engineFactory: @escaping @MainActor () -> any SyntaxHighlightingEngine = { HighlightrEngine() }
     ) {
         let editorView = HighlightrEditorView(
-            text: text,
-            language: language,
-            theme: theme,
-            selection: selection,
-            isEditable: isEditable,
-            isEditorFocused: isEditorFocused,
-            isUndoable: isUndoable,
-            isRedoable: isRedoable,
+            model: model,
             configuration: viewConfiguration,
             engineFactory: engineFactory
         )
@@ -62,6 +58,7 @@ public final class HighlightrEditorViewController: UIViewController {
         editorView: HighlightrEditorView,
         configuration: HighlightrEditorViewControllerConfiguration = .init()
     ) {
+        self.model = editorView.model
         self.editorView = editorView
         self.commandExecutor = EditorCommandExecutor(editorView: editorView)
         self.configuration = configuration
@@ -70,7 +67,7 @@ public final class HighlightrEditorViewController: UIViewController {
     }
 
     isolated deinit {
-        isToolbarObservationActive = false
+        toolbarObservationTask?.cancel()
     }
 
     public override func viewDidLoad() {
@@ -223,34 +220,36 @@ public final class HighlightrEditorViewController: UIViewController {
     }
 
     private func startToolbarStateSync() {
-        isToolbarObservationActive = true
-        observeToolbarState()
-    }
-
-    private func observeToolbarState() {
-        guard isToolbarObservationActive else { return }
-
-        withObservationTracking {
-            _ = editorView.isEditable
-            _ = editorView.isUndoable
-            _ = editorView.isRedoable
-            _ = editorView.hasText
-            _ = editorView.isEditorFocused
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self, self.isToolbarObservationActive else { return }
+        toolbarObservationTask?.cancel()
+        let observedModel = model
+        let stream = ObservationsCompat(backend: .automatic) {
+            ToolbarObservationSnapshot(
+                text: observedModel.text,
+                isEditable: observedModel.isEditable,
+                isEditorFocused: observedModel.isEditorFocused,
+                isUndoable: observedModel.isUndoable,
+                isRedoable: observedModel.isRedoable
+            )
+        }
+        toolbarObservationTask = Task { @MainActor [weak self] in
+            for await _ in stream {
+                if Task.isCancelled {
+                    break
+                }
+                guard let self else {
+                    break
+                }
                 self.applyToolbarCommandAvailability()
-                self.observeToolbarState()
             }
         }
     }
 
     private func applyToolbarCommandAvailability() {
-        toolbarUndoItem?.isEnabled = editorView.isEditable && editorView.isUndoable
-        toolbarRedoItem?.isEnabled = editorView.isEditable && editorView.isRedoable
-        toolbarPairsMenuItem?.isEnabled = editorView.isEditable
-        toolbarEditMenuItem?.isEnabled = editorView.isEditable && editorView.hasText
-        toolbarDismissItem?.isEnabled = editorView.isEditorFocused
+        toolbarUndoItem?.isEnabled = model.isEditable && model.isUndoable
+        toolbarRedoItem?.isEnabled = model.isEditable && model.isRedoable
+        toolbarPairsMenuItem?.isEnabled = model.isEditable
+        toolbarEditMenuItem?.isEnabled = model.isEditable && model.hasText
+        toolbarDismissItem?.isEnabled = model.isEditorFocused
         refreshToolbarLayoutIfNeeded()
     }
 

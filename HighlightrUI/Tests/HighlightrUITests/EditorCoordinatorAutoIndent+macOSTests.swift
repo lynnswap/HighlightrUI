@@ -9,10 +9,10 @@ import Testing
 struct EditorCoordinatorAutoIndentmacOSTests {
     @Test
     func autoIndentEnabledInsertsLineIndentOnNewline() async {
-        let model = HighlightrEditorView(text: "if true {\n    let x = 1", language: "swift")
+        let model = HighlightrModel(text: "if true {\n    let x = 1", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
-            configuration: .init(autoIndentOnNewline: true),
+            model: model,
+            controllerConfiguration: .init(autoIndentOnNewline: true),
         )
 
         controller.loadView()
@@ -29,10 +29,10 @@ struct EditorCoordinatorAutoIndentmacOSTests {
 
     @Test
     func autoIndentDisabledKeepsPlainNewline() async {
-        let model = HighlightrEditorView(text: "if true {\n    let x = 1", language: "swift")
+        let model = HighlightrModel(text: "if true {\n    let x = 1", language: "swift")
         let controller = HighlightrEditorViewController(
-            editorView: model,
-            configuration: .init(autoIndentOnNewline: false),
+            model: model,
+            controllerConfiguration: .init(autoIndentOnNewline: false),
         )
 
         controller.loadView()

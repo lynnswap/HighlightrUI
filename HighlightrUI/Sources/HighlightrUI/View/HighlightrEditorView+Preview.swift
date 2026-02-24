@@ -21,9 +21,12 @@ import UIKit
 
 private struct HighlightrEditorViewPreviewContainer: UIViewRepresentable {
     func makeUIView(context: Context) -> HighlightrEditorView {
-        HighlightrEditorView(
+        let model = HighlightrModel(
             text: HighlightrEditorViewPreviewFactory.previewText,
             language: "swift"
+        )
+        return HighlightrEditorView(
+            model: model
         )
     }
 
@@ -34,9 +37,12 @@ import AppKit
 
 private struct HighlightrEditorViewPreviewContainer: NSViewRepresentable {
     func makeNSView(context: Context) -> HighlightrEditorView {
-        HighlightrEditorView(
+        let model = HighlightrModel(
             text: HighlightrEditorViewPreviewFactory.previewText,
             language: "swift"
+        )
+        return HighlightrEditorView(
+            model: model
         )
     }
 
